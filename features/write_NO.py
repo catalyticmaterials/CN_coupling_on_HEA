@@ -43,7 +43,7 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
 		# Get index of central Nitrogen atom
 		idx_N = np.nonzero(symbols == 'N')[0][4]
 		
-		# Get position of carbon atom
+		# Get position of Nitrogen atom
 		pos_N = atoms_3x3.positions[idx_N]
 		
 		# Get indices of the 1st layer atoms

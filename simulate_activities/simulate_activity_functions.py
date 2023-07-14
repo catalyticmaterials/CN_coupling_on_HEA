@@ -6,7 +6,7 @@ from scipy.stats import linregress
 #from methods import adsorb_CO,adsorb_H,adsorb_NO
 import sys
 sys.path.append("..")
-from shared_params.surface import predict_energies, initiate_surface
+from scripts.surface import predict_energies, initiate_surface
 #from shared_params.kinetic_model import fractional_urea_rate, urea_rate,urea_conversion
 from time import time
 

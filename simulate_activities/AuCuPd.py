@@ -3,8 +3,8 @@ from tqdm import tqdm
 import sys
 sys.path.append("..")
 from simulate_activity_functions import simulate_activity
-from shared_params.compositionspace_functions import get_molar_fractions, molar_fractions_to_cartesians
-import shared_params.plotting_ternary_functions as pt
+from scripts.compositionspace_functions import get_molar_fractions, molar_fractions_to_cartesians
+import scripts.plotting_ternary_functions as pt
 
 grid_mf = get_molar_fractions(0.05, 5)
 mask = (grid_mf[:,0]==0) * (grid_mf[:,4]==0)

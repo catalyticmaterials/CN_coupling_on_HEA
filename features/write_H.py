@@ -2,43 +2,52 @@ import numpy as np
 from ase.db import connect
 from collections import Counter
 import itertools as it
+from site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
 
-def get_site_pos_in_xy(pos_1st):
-    # Rearange positions so that they are ordered by layer
-    pos_1st_ = np.array([pos_1st[(9*3*i)+j*3:3+3*9*i+j*3] for j in range(9) for i in range(3)])
-    pos_1st_ = pos_1st_.reshape(81,3)
-    #print(pos_1st_)
-    grid = pos_1st_.reshape(9,9,-1)
-    #print(grid)
-    grid = np.pad(grid,pad_width=((1,1),(1,1),(0,0)),mode="wrap")
-    
-    fcc_sites =  (grid[1:-1,1:-1] + grid[1:-1,2:] + grid[2:,1:-1])/3
-    
-    hcp_sites = (grid[1:-1,1:-1] + grid[2:,:-2] +grid[2:,1:-1])/3
-    
-    bridge_sites1 = (grid[1:-1,1:-1] + grid[1:-1,2:])/2
-    bridge_sites2 = (grid[1:-1,1:-1] + grid[2:,1:-1])/2
-    bridge_sites3 = (grid[1:-1,1:-1] + grid[2:,:-2])/2
-    bridge_sites = np.vstack([bridge_sites1.reshape(-1,3),bridge_sites2.reshape(-1,3),bridge_sites3.reshape(-1,3)])
-    
-    ontop_sites = np.copy(pos_1st)
-    
-    return fcc_sites.reshape(-1,3), hcp_sites.reshape(-1,3), bridge_sites,ontop_sites
 
-def get_nearest_sites_in_xy(fcc,hcp,bridge,ontop,ads):
-    fcc_dist = np.sum((fcc[:,:2]-ads[:2])**2,axis=1)
-    hcp_dist = np.sum((hcp[:,:2]-ads[:2])**2,axis=1)
-    bridge_dist = np.sum((bridge[:,:2]-ads[:2])**2,axis=1)
-    ontop_dist = np.sum((ontop[:,:2]-ads[:2])**2,axis=1)
+# def get_site_pos_in_xy(pos_1st):
+#     # Rearange positions so that they are ordered by layer
+#     pos_1st_ = np.array([pos_1st[(9*3*i)+j*3:3+3*9*i+j*3] for j in range(9) for i in range(3)])
+#     pos_1st_ = pos_1st_.reshape(81,3)
+#     #print(pos_1st_)
+#     grid = pos_1st_.reshape(9,9,-1)
+#     #print(grid)
+#     grid = np.pad(grid,pad_width=((1,1),(1,1),(0,0)),mode="wrap")
     
-    min_ids = [np.argmin(dist) for dist in (fcc_dist,hcp_dist,bridge_dist,ontop_dist)]
-    min_dists = [dist[min_ids[i]] for i,dist in enumerate((fcc_dist,hcp_dist,bridge_dist,ontop_dist))]
+#     fcc_sites =  (grid[1:-1,1:-1] + grid[1:-1,2:] + grid[2:,1:-1])/3
     
-    site_str = ["fcc","hcp","bridge","ontop"]
+#     hcp_sites = (grid[1:-1,1:-1] + grid[2:,:-2] +grid[2:,1:-1])/3
     
-    nearest_site_type = site_str[np.argmin(min_dists)]
+#     bridge_sites1 = (grid[1:-1,1:-1] + grid[1:-1,2:])/2
+#     bridge_sites2 = (grid[1:-1,1:-1] + grid[2:,1:-1])/2
+#     bridge_sites3 = (grid[1:-1,1:-1] + grid[2:,:-2])/2
     
-    return nearest_site_type, min_ids
+    
+#     # cut off ends as we are only interested in sites in the middle 3x3 atoms anyway
+#     fcc_sites = fcc_sites[2:-2,2:-2]
+#     hcp_sites = hcp_sites[2:-2,2:-2]
+#     bridge_sites1 = bridge_sites1[2:-2,2:-2]
+#     bridge_sites2 = bridge_sites2[2:-2,2:-2]
+#     bridge_sites3 = bridge_sites3[2:-2,2:-2]
+#     ontop_sites = np.copy(grid[3:-3,3:-3]).reshape(-1,3)
+    
+#     bridge_sites = np.vstack([bridge_sites1.reshape(-1,3),bridge_sites2.reshape(-1,3),bridge_sites3.reshape(-1,3)])
+#     return fcc_sites.reshape(-1,3), hcp_sites.reshape(-1,3), bridge_sites,ontop_sites
+
+# def get_nearest_sites_in_xy(fcc,hcp,bridge,ontop,ads):
+#     fcc_dist = np.sum((fcc[:,:2]-ads[:2])**2,axis=1)
+#     hcp_dist = np.sum((hcp[:,:2]-ads[:2])**2,axis=1)
+#     bridge_dist = np.sum((bridge[:,:2]-ads[:2])**2,axis=1)
+#     ontop_dist = np.sum((ontop[:,:2]-ads[:2])**2,axis=1)
+    
+#     min_ids = [np.argmin(dist) for dist in (fcc_dist,hcp_dist,bridge_dist,ontop_dist)]
+#     min_dists = [dist[min_ids[i]] for i,dist in enumerate((fcc_dist,hcp_dist,bridge_dist,ontop_dist))]
+    
+#     site_str = ["fcc","hcp","bridge","ontop"]
+    
+#     nearest_site_type = site_str[np.argmin(min_dists)]
+    
+#     return nearest_site_type, min_ids
 
 # Define metals in the considered alloys
 metals = ['Ag','Au', 'Cu', 'Pd','Pt']
@@ -71,6 +80,7 @@ filename = 'H.csv'
 with open(filename, 'w') as file_:
 	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab')
 
+skipped_rows=0
 # Connect to database with atomic structures of *CO
 with connect(f'{path}/slabs_out.db') as db_slab,\
     connect(f'{path}/H_out.db') as db_ads,\
@@ -133,6 +143,41 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         #print(np.sort(np.sqrt(dists_sq_2nd))[:3],z_dist*1.1)
         #break
         
+        
+        #Get position of each site type in xy-plane from the 1st layer atom position
+        sites_xy = get_site_pos_in_xy(pos_1st)
+        fcc_sites_pos, hcp_sites_pos, bridge_sites_pos, ontop_sites_pos = sites_xy
+        #Get site type and min dist site id.
+        nearest_site, min_dist_ids = get_nearest_sites_in_xy(*sites_xy,pos_H)
+        """
+        if nearest_site=="bridge": 
+            fcc_dist = np.linalg.norm(fcc_sites_pos[min_dist_ids[0]][:2] - pos_H[:2])
+            hcp_dist =np.linalg.norm(hcp_sites_pos[min_dist_ids[1]][:2] - pos_H[:2])
+            top_dist =np.linalg.norm(ontop_sites_pos[min_dist_ids[3]][:2] - pos_H[:2])
+            site_names = ["fcc","hcp","ontop"]
+            nearest_site = site_names[np.argmin([fcc_dist,hcp_dist,top_dist])]
+        """
+
+        # If nearest site is bridge, locate the next nearest site
+        if nearest_site=="bridge": 
+            fcc_dist = np.linalg.norm(fcc_sites_pos[min_dist_ids[0]][:2] - pos_H[:2])
+            hcp_dist =np.linalg.norm(hcp_sites_pos[min_dist_ids[1]][:2] - pos_H[:2])
+            top_dist =np.linalg.norm(ontop_sites_pos[min_dist_ids[3]][:2] - pos_H[:2])
+            site_names = ["fcc","hcp","ontop"]
+            nearest_site = site_names[np.argmin([fcc_dist,hcp_dist,top_dist])]
+            
+        if nearest_site!="fcc":
+            skipped_rows+=1
+            print(nearest_site,row_ads.id)
+            continue
+        
+        # if nearest_site=='hcp':
+        #      skipped_rows+=1
+        #      print(nearest_site,row_ads.id)
+        #      continue
+
+        pos_site = fcc_sites_pos[min_dist_ids[0]]
+        """
         #Check for hcp vs fcc
         if min_dist_2nd < z_dist*1.1:
             #Get position of each site type in xy-plane from the 1st layer atom position
@@ -184,7 +229,7 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
                     pos_site = np.mean(atoms_3x3.positions[ids_site], axis=0)
                     
                     
-                    
+        """            
 		# Sort atom indices in the top 2 layers according to their distance to the adsorption site
         ids_1st_sorted = ids_1st[np.argsort(dists_sq_1st)]
         ids_2nd_sorted = ids_2nd[np.argsort(dists_sq_2nd)]
@@ -233,3 +278,4 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id}')
 
 print(f'[SAVED] {filename}')
+print(skipped_rows)
