@@ -160,7 +160,7 @@ def predict_energies(surface,adsorbate,metals):
     return energies, site_ids
 
 
-def fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_mask):
+def fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask):
     # Make ids for CO and NO
     CO_ids=np.zeros((len(CO_data),1))
     NO_ids=np.ones((len(NO_data),1))
@@ -174,10 +174,6 @@ def fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverag
     
     #Sort data by lowest energy
     CO_NO_array = CO_NO_array[CO_NO_array[:, 0].argsort()]
-
-    # Initiate Coverage masks
-    CO_coverage_mask = np.full((100, 100),None)
-    NO_coverage_mask = np.full((100, 100),None)
 
     #Fill surface with NO and CO with blocking
     for (energy,i,j,idx) in CO_NO_array:
@@ -197,7 +193,7 @@ def fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverag
     return CO_coverage_mask,NO_coverage_mask
 
 
-def fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_mask, P_CO,P_NO):
+def fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,P_CO,P_NO):
     
     # get partial preassures
     P = P_CO + P_NO
@@ -211,7 +207,7 @@ def fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_ma
             energy, i, j = CO_data[ind]
             i,j = int(i),int(j)
             CO_data = np.delete(CO_data, ind,axis=0)
-            if CO_coverage_mask[i,j] is None:
+            if CO_coverage_mask[i,j] is None and energy <= 0:
                 CO_coverage_mask,NO_coverage_mask=adsorb_CO(i, j, CO_coverage_mask, NO_coverage_mask)
                 
         elif len(NO_data)>0:
@@ -219,7 +215,7 @@ def fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_ma
             energy, i, j = NO_data[ind]
             i,j = int(i),int(j)
             NO_data = np.delete(NO_data, ind,axis=0)
-            if NO_coverage_mask[i,j] is None:
+            if NO_coverage_mask[i,j] is None and energy <= 0:
                 CO_coverage_mask,NO_coverage_mask=adsorb_NO(i, j, CO_coverage_mask, NO_coverage_mask)
                 
 
@@ -371,14 +367,14 @@ def fill_surface(composition,P_CO,P_NO, metals, method, eU=0, n=100):
     for (energy, i, j) in H_data:
         i,j=int(i),int(j)
         if energy<=(-eU):
-            H_coverage_mask,CO_coverage_mask,NO_coverage_mask = adsorb_H(i,j,H_coverage_mask, CO_coverage_mask, NO_coverage_mask)
+            H_coverage_mask,CO_coverage_mask,NO_coverage_mask = adsorb_H(i,j,H_coverage_mask, CO_coverage_mask, NO_coverage_mask,n=n)
 
     
 
     if method=='eq':
-        CO_coverage_mask,NO_coverage_mask = fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_mask)
+        CO_coverage_mask,NO_coverage_mask = fill_equilibrium(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,)
     elif method=='dyn':
-        CO_coverage_mask,NO_coverage_mask = fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_mask, P_CO,P_NO)
+        CO_coverage_mask,NO_coverage_mask = fill_dynamic(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask, P_CO,P_NO)
     elif method=='mc':
         CO_coverage_mask,NO_coverage_mask = fill_mc(CO_data,NO_data,CO_coverage_mask,NO_coverage_mask,H_coverage_mask, P_CO,P_NO, n)
 

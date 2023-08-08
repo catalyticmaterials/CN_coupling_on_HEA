@@ -170,9 +170,9 @@ def prepare_triangle_plot(ax, elems):
 	
 	return ax
 
-def make_plot(grid,target_func,elements,scatter=False,contour_levels=15,vmax=None,colorbar=False):
+def make_plot(grid,target_func,elements,scatter=False,contour_levels=15,vmax=None,colorbar=False,colormap='viridis',minval=0.2,maxval=1.0):
     # Define color map of plot
-    cmap = truncate_colormap(plt.get_cmap('viridis'), minval=0.2, maxval=1.0, n=100)
+    cmap = truncate_colormap(plt.get_cmap(colormap), minval=minval, maxval=maxval, n=100)
     
     # Make figure for plotting Gaussian process mean, uncertainty, and acquisition function
     fig, ax = plt.subplots(figsize=(4,4),dpi=400)
@@ -182,7 +182,7 @@ def make_plot(grid,target_func,elements,scatter=False,contour_levels=15,vmax=Non
     prepare_triangle_plot(ax, elems=elements)
     
     # Plot surrogate/uncertainty/acquisition function as a contour plot
-    plot_kwargs = dict(cmap=cmap, levels=contour_levels, zorder=0,vmin=0,vmax=None)
+    plot_kwargs = dict(cmap=cmap, levels=contour_levels, zorder=0,vmin=0,vmax=vmax)
     #plot_kwargs = dict(cmap=cmap, levels=100, zorder=0,vmin=0)#,vmax=0.212578)
     
     if scatter:   

@@ -24,7 +24,7 @@ for composition in [np.array([0.2,0.2,0.2,0.2,0.2]),np.array([0.1,0.1,0.6,0.1,0.
     surface = initiate_surface(composition,metals)
     
     # Predict energies of each adsorbate
-    for ads in ["CO","H","NO_fcc"]:
+    for ads in ["CO","NO_fcc",'H']:
         energies,site_ids=predict_energies(surface, ads, metals)
         np.savetxt(f"{alloy}/{ads}_energies.csv", np.hstack((energies.reshape(-1,1),site_ids)),delimiter=',')
         #print(np.sort(-energies)[:5])

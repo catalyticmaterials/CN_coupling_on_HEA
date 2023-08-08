@@ -37,8 +37,8 @@ def CO_NO_pairs_energy(CO_coverage_bool, NO_coverage_bool,CO_energy_grid, NO_ene
     pairs3_bool=CO_coverage_bool * NO_coverage_mask_pad[:-2,2:]
 
     # Get the adsorption energies of the adsorbates that are in pairs
-    energy_pairs_CO = np.array([CO_energy_grid[pairs1_bool],CO_energy_grid[pairs2_bool],CO_energy_grid[pairs3_bool]]).flatten()
-    energy_pairs_NO = np.array([NO_energy_grid_pad[:-2,:-2][pairs1_bool],NO_energy_grid_pad[2:,:-2][pairs2_bool],NO_energy_grid_pad[:-2,2:][pairs3_bool]]).flatten()
+    energy_pairs_CO = np.concatenate(([CO_energy_grid[pairs1_bool],CO_energy_grid[pairs2_bool],CO_energy_grid[pairs3_bool]]))
+    energy_pairs_NO = np.concatenate(([NO_energy_grid_pad[:-2,:-2][pairs1_bool],NO_energy_grid_pad[2:,:-2][pairs2_bool],NO_energy_grid_pad[:-2,2:][pairs3_bool]]))
 
     # Collect the adsorption energies in its pairs
     CO_NO_energy_pairs = np.vstack((energy_pairs_CO,energy_pairs_NO)).T
@@ -79,9 +79,75 @@ def get_sites(composition,P_CO,P_NO, metals, method, eU=0, n=100, return_ads_ene
         CO_ads = CO_energy_grid[CO_coverage_bool]
         NO_ads = NO_energy_grid[NO_coverage_bool]
         H_ads = H_energy_grid[H_coverage_bool]
-        return CO_NO_energy_pairs, CO_ads, NO_ads, H_ads
+        return CO_NO_energy_pairs, CO_ads, NO_ads, H_ads, CO_energy_grid.flatten(), NO_energy_grid.flatten(), H_energy_grid.flatten()
     else:
         return CO_NO_energy_pairs
+
+
+
+def count_selectivity(composition,P_CO,P_NO, metals, method, eU=0, n=100):
+    # Simulate surface
+    (CO_coverage_bool, NO_coverage_bool, H_coverage_bool), (CO_energy_grid, NO_energy_grid, H_energy_grid) = fill_surface(composition,P_CO,P_NO, metals, method, eU=eU, n=n)
+
+    # Number of adsorped H
+    N_H_ads = np.sum(H_coverage_bool)
+
+    # count CO-NO pairs
+    # Pad grid
+    # NO_coverage_mask_pad = np.pad(NO_coverage_bool,pad_width=((1,1),(1,1)),mode="wrap")
+    # #N_CO_NO_pairs = count_CO_NO_pairs(CO_coverage_bool, NO_coverage_bool)
+    # # Get pairs in all three directions
+    # pairs1_bool=CO_coverage_bool * NO_coverage_mask_pad[:-2,:-2]
+    # pairs2_bool=CO_coverage_bool * NO_coverage_mask_pad[2:,:-2]
+    # pairs3_bool=CO_coverage_bool * NO_coverage_mask_pad[:-2,2:]
+    
+    # Total number of pairs
+    # n_pairs = np.sum(pairs1_bool) + np.sum(pairs2_bool) + np.sum(pairs3_bool)
+    
+    # Number of atoms in the surface layer
+    surface_atoms = np.multiply(*CO_coverage_bool.shape)                 
+    
+    # Get active sites as the number of pairs pr. surface atom
+    # N_CO_NO_pairs = n_pairs#/surface_atoms
+    
+    # N_CN_NO = np.sum(pairs1_bool+pairs2_bool+pairs3_bool)#/surface_atoms
+
+    # Get pairs in all three directions
+    #non_pairs1_bool=np.invert(CO_coverage_bool) * NO_coverage_mask_pad[:-2,:-2]
+    #non_pairs2_bool=np.invert(CO_coverage_bool) * NO_coverage_mask_pad[2:,:-2]
+    #non_pairs3_bool=np.invert(CO_coverage_bool) * NO_coverage_mask_pad[:-2,2:]
+
+    CO_coverage_mask_pad = np.pad(CO_coverage_bool,pad_width=((1,1),(1,1)),mode="wrap")
+    # non_pairs1_bool=NO_coverage_bool * np.invert(CO_coverage_mask_pad[:-2,2:])
+    # non_pairs2_bool=NO_coverage_bool * np.invert(CO_coverage_mask_pad[2:,:-2])
+    # non_pairs3_bool=NO_coverage_bool * np.invert(CO_coverage_mask_pad[2:,2:])
+    # print(non_pairs1_bool)
+    # print(non_pairs2_bool)
+    # print(non_pairs3_bool)
+
+    # N_NH3_NO = np.sum(non_pairs1_bool*non_pairs2_bool*non_pairs3_bool)
+
+
+    
+    pairs1_bool=NO_coverage_bool * CO_coverage_mask_pad[:-2,:-2]
+    pairs2_bool=NO_coverage_bool * CO_coverage_mask_pad[2:,:-2]
+    pairs3_bool=NO_coverage_bool * CO_coverage_mask_pad[:-2,2:]
+
+    N_CN_NO = np.sum(pairs1_bool+pairs2_bool+pairs3_bool)
+
+    N_CO_NO_pairs = (np.sum(pairs1_bool) + np.sum(pairs2_bool) + np.sum(pairs3_bool))
+    
+    N_NH3_NO = np.sum(NO_coverage_bool) - N_CN_NO
+    
+    # print(np.sum(NO_coverage_bool))
+
+    # print(CO_coverage_bool)
+    # print(NO_coverage_bool)
+    # print(H_coverage_bool)
+    return N_H_ads/surface_atoms, N_NH3_NO/surface_atoms, N_CN_NO/surface_atoms, N_CO_NO_pairs/surface_atoms
+
+
+
 
 # Define Boltzmann's constant
 #kB = 1.380649e-4 / 1.602176634  # eV K-1 (exact)
