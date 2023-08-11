@@ -23,7 +23,7 @@ filename = 'CO.csv'
 
 # Write header to file
 with open(filename, 'w') as file_:
-	file_.write('site, 1st layer, 2nd layer, 3rd layer, adsorption energy (eV), row id ads, row id slab')
+	file_.write('site, 1st layer, 2nd layer, 3rd layer, adsorption energy (eV), row id ads, row id slab, site id')
 
 # Connect to database with atomic structures of *CO
 with connect(f'{path}/slabs_out.db') as db_slab,\
@@ -132,6 +132,6 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
 		energy = row_ads.energy - row_slab.energy - E_ref
 		
 		# Write features and energy to file
-		file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id}')
+		file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{idx_site-47*4-36}')
 
 print(f'[SAVED] {filename}')

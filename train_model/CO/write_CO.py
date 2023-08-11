@@ -16,8 +16,8 @@ reg = MultiLinearRegressor(n_atoms_zones)
 # Read features from file
 filename = '../../features/CO.csv'
 data = np.loadtxt(filename, delimiter=',', skiprows=1)
-features = data[:, :-3]
-energies = data[:, -3]
+features = data[:, :-4]
+energies = data[:, -4]
 
 # Split features and energies into ensembles
 ensembles = [(1,0,0,0,0), (0,1,0,0,0), (0,0,1,0,0), (0,0,0,1,0), (0,0,0,0,1)]

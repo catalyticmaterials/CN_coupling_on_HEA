@@ -23,8 +23,8 @@ n_zones = len(n_atoms_zones)
 # Read features from file
 filename = '../../features/NO_fcc.csv'
 data = np.loadtxt(filename, delimiter=',', skiprows=1)
-features = data[:, :-3]
-energies = data[:, -3]
+features = data[:, :-4]
+energies = data[:, -4]
 
 
 # Define regressor

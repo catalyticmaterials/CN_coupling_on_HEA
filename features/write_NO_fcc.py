@@ -33,7 +33,7 @@ filename = 'NO_fcc.csv'
 
 # Write header to file
 with open(filename, 'w') as file_:
-	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab')
+	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab,site id')
 
 skipped_rows=0
 # Connect to database with atomic structures of *CO
@@ -129,6 +129,7 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
             continue
         """
         pos_site = fcc_sites_pos[min_dist_ids[0]]
+        
         
         """
         #Check for hcp vs fcc
@@ -228,7 +229,7 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         energy = row_ads.energy - row_slab.energy - E_ref
 		
 		# Write features and energy to file
-        file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id}')
+        file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{ids_site%47 - 36}')
 
 print(f'[SAVED] {filename}')
 print(skipped_rows)
