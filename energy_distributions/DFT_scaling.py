@@ -41,7 +41,7 @@ H_energies-=0.1
 
 
 fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(13,4))
-
+count=0
 for metal in metals:
     CO_mask = CO_site_metal==metal
     
@@ -51,14 +51,30 @@ for metal in metals:
         H_site_mask = np.any(H_site_ids==site_id,axis=1)
         H_mask = H_slab_mask * H_site_mask
 
-        ax1.scatter(H_energies[H_mask],np.full(len(H_energies[H_mask]),CO_energy),c=metal_colors[metal],marker='.')
+        H_energies_masked = H_energies[H_mask]
+
+        ax1.scatter(H_energies_masked,np.full(len(H_energies_masked),CO_energy),c=metal_colors[metal],marker='.')
 
 
         NO_slab_mask = NO_slabs_ids==slab_id
         NO_site_mask = np.any(NO_site_ids==site_id,axis=1)
         NO_mask = NO_slab_mask * NO_site_mask
 
-        ax3.scatter(np.full(len(NO_energies[NO_mask]),CO_energy), NO_energies[NO_mask],c=metal_colors[metal],marker='.')
+        NO_energies_masked = NO_energies[NO_mask]
+
+
+        if np.any(H_energies_masked<=(-0.1)):
+            
+            ax3.scatter(np.full(len(NO_energies_masked),CO_energy), NO_energies_masked,c=metal_colors[metal],marker='.',alpha=0.5)
+            count+=1
+
+        else:
+            
+            
+
+            ax3.scatter(np.full(len(NO_energies_masked),CO_energy), NO_energies_masked,c=metal_colors[metal],marker='.')
+
+    
 
 
 H_NO_energies = np.empty((0,2))
@@ -144,3 +160,4 @@ plt.tight_layout()
 fig.subplots_adjust(top=0.9)
 plt.savefig('DFT_scaling.png', dpi=400)
 
+print(count)

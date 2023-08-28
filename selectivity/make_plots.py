@@ -27,7 +27,11 @@ for P_NO, usecols in zip(['1','01'],[(4,5,6,7),(9,10,11,12)]):
     plt.tight_layout()
     plt.savefig(f'AuCuPd_NH3_PNO{P_NO}.png',dpi=400)
 
-    NO_conversion = NO_CN/(NO_NH3+NO_CN)
+    fig,ax = make_plot(grid,NO_CN,metals,colormap='summer',minval=0.0,colorbar=True)
+    plt.tight_layout()
+    plt.savefig(f'AuCuPd_CN_PNO{P_NO}.png',dpi=400)
+
+    NO_conversion = NO_CN/(NO_NH3+NO_CN+H)
     NO_conversion[np.isnan(NO_conversion)] = 0
     fig,ax = make_plot(grid,NO_conversion,metals,colormap='cividis',minval=0.0,colorbar=True)
     plt.tight_layout()
