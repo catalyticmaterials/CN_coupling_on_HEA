@@ -142,11 +142,11 @@ for composition in compositions:
     print(probability)
 
 
-    x_centers = (xedges[1:] + xedges[:-1])/2
-    y_centers = (yedges[1:] + yedges[:-1])/2
+    # x_centers = (xedges[1:] + xedges[:-1])/2
+    # y_centers = (yedges[1:] + yedges[:-1])/2
 
-    x_centers_id=np.where(x_centers<=-0.4)[0]
-    y_centers_id=np.where(y_centers<=-0.71)[0]
+    # x_centers_id=np.where(x_centers<=-0.4)[0]
+    # y_centers_id=np.where(y_centers<=-0.71)[0]
 
     #prob2 = np.sum(prob_density.T[y_centers_id[0]:y_centers_id[-1]+1,x_centers_id[0]:x_centers_id[-1]+1]) * (x_centers[x_centers_id[1]]-x_centers[x_centers_id[0]]) * (y_centers[y_centers_id[1]]-y_centers[y_centers_id[0]]) 
 
@@ -168,6 +168,10 @@ for composition in compositions:
     fig.subplots_adjust(bottom=0.2,left=0.2,right=0.8,top=0.8)
    
     plt.savefig(f'{alloy}/{alloy}_CO_NO_energy_distribution.png',dpi=600,bbox_inches='tight')
+    break
+
+
+    
 
 
     

@@ -79,7 +79,7 @@ def get_sites(composition,P_CO,P_NO, metals, method, eU=0, n=100, return_ads_ene
         CO_ads = CO_energy_grid[CO_coverage_bool]
         NO_ads = NO_energy_grid[NO_coverage_bool]
         H_ads = H_energy_grid[H_coverage_bool]
-        return CO_NO_energy_pairs, CO_ads, NO_ads, H_ads, CO_energy_grid.flatten(), NO_energy_grid.flatten(), H_energy_grid.flatten()
+        return CO_NO_energy_pairs, CO_ads, NO_ads, H_ads, CO_energy_grid.flatten(), NO_energy_grid.flatten(), H_energy_grid.flatten(), CO_coverage_bool, NO_coverage_bool, H_coverage_bool
     else:
         return CO_NO_energy_pairs
 

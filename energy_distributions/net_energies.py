@@ -1,5 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
+import matplotlib.patches as mpatch
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 from density_plot_functions import probability_density_plot
 import sys
 sys.path.append('..')
@@ -13,7 +16,7 @@ H_color = np.array([179,227,245])/255
 for method in ['eq','dyn']:
     np.random.seed(1)
     composition = np.array([0.2,0.2,0.2,0.2,0.2])
-    CO_NO_energy_pairs, CO_ads, NO_ads, H_ads, CO_energies, NO_energies, H_energies = get_sites(composition,P_CO=1,P_NO=1, metals=metals, method=method, eU=0, n=100, return_ads_energies=True)
+    CO_NO_energy_pairs, CO_ads, NO_ads, H_ads, CO_energies, NO_energies, H_energies, CO_bool, NO_bool, H_bool = get_sites(composition,P_CO=1,P_NO=1, metals=metals, method=method, eU=0, n=100, return_ads_energies=True)
 
     fig, ax = plt.subplots(figsize=(8,3))
     Emin = np.min([CO_energies,NO_energies,H_energies])
@@ -21,18 +24,69 @@ for method in ['eq','dyn']:
 
     range = (Emin,Emax)
     bins=100
-    plt.hist(CO_energies,histtype='step',label='CO',color=C_color,range=range,bins=bins,zorder=2)
-    plt.hist(NO_energies,histtype='step',label='NO',color=N_color,range=range,bins=bins,zorder=1)
-    plt.hist(H_energies[H_energies<10],histtype='step',label='H',color=H_color,range=range,bins=bins,zorder=0)
-    plt.hist(CO_ads,label='*CO',alpha=0.7,range=range,bins=bins,color=C_color,zorder=2)
-    plt.hist(NO_ads,label='*NO',alpha=0.7,range=range,bins=bins,color=N_color,zorder=1)
-    plt.hist(H_ads,label='*H',alpha=0.7,range=range,bins=bins,color=H_color,zorder=0)
-    plt.xlabel('Adsorption Gibbs Free Energies [eV]')
-    plt.ylabel('Number of Sites')
-    plt.ylim(None,550)
-    plt.legend()
+    ax.hist(CO_energies,histtype='step',label='CO',color=C_color,range=range,bins=bins,zorder=2)
+    ax.hist(NO_energies,histtype='step',label='NO',color=N_color,range=range,bins=bins,zorder=1)
+    ax.hist(H_energies[H_energies<10],histtype='step',label='H',color=H_color,range=range,bins=bins,zorder=0)
+    CO_counts, bins, patches = ax.hist(CO_ads,label='*CO',alpha=1,range=range,bins=bins,color=C_color,zorder=2)
+    ax.hist(NO_ads,label='*NO',alpha=1,range=range,bins=bins,color=N_color,zorder=1)
+    ax.hist(H_ads,label='*H',alpha=0.4,range=range,bins=bins,color=H_color,zorder=0)
+    ax.set_xlabel('Adsorption Gibbs Free Energies [eV]')
+    ax.set_ylabel('Number of Sites')
+
+    
+    ax.set_ylim(None,470)
+    ax.set_xlim(-1.55,0.1)
+    
+    ax.legend()
+
+
+    ax.xaxis.set_major_locator(MultipleLocator(0.5))
+    ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(100))
+    ax.yaxis.set_minor_locator(MultipleLocator(50))
+
+
+
+    # xbins = (bins[1:] + bins[:-1])/2
+    # arrow_mask = (xbins < -1.0) * (CO_counts<=5) * (CO_counts>0)
+    
+    # x_arrow = xbins[arrow_mask]
+    # y_arrow = CO_counts[arrow_mask]
+    
+    # x_start = -1.25
+    # y_start = 25
+
+    # prop = dict(arrowstyle="-|>,head_width=0.05,head_length=0.2", shrinkA=0,shrinkB=0,color='k')
+    # for x_end,y_end in zip(x_arrow,y_arrow):
+    #     plt.annotate('',xy=(x_end,y_end),xytext=(x_end,y_start),arrowprops=prop)
+        
+    
+    # ax.add_artist(mpatch.Rectangle((min(x_arrow)-0.005,30),max(x_arrow)-min(x_arrow)+0.01,22,fill=False,edgecolor='black',linewidth=0.6,linestyle='--'))
+    # ax.text((max(x_arrow)+min(x_arrow))/2, 30,'5 or less adsorbed CO',ha='center',va='bottom',fontsize=7)
+
+
+
+
+    axins = ax.inset_axes([0.2, 0.7, 0.2, 0.2])
+    # axins = zoomed_inset_axes(ax, 5, loc=1)
+    axins.hist(CO_ads[CO_ads<=-1],range=range,bins=bins,color=C_color)
+    axins.set_xlim([-1.38,-1.05])
+    axins.set_ylim([0,4.5])
+    axins.set_yticks([])
+    axins.xaxis.set_major_locator(MultipleLocator(0.5))
+    axins.xaxis.set_minor_locator(MultipleLocator(0.1))
+    #axins.yaxis.set_major_locator(MultipleLocator(5))
+    axins.yaxis.set_minor_locator(MultipleLocator(1))
+
+
+    #axins.set_xticklabels([])
+    #axins.set_yticklabels([])
+    # ax.indicate_inset_zoom(axins, edgecolor="black")
+    mark_inset(ax, axins, loc1=2, loc2=4, fc="none", ec="black",alpha=0.3,linestyle='--')
+
+
     plt.tight_layout()
-    plt.savefig(f'adsorption_dist_{method}.png',dpi=400)
+    plt.savefig(f'adsorption_dist_{method}.png',dpi=600)
     plt.close()
 
 
@@ -49,42 +103,89 @@ for method in ['eq','dyn']:
 
 
 
-    fig,ax,(hist_x,xedges),(hist_y,yedges), prob_density = probability_density_plot(CO_energies,NO_energies,return_hists=True)
-    ax.scatter(*CO_NO_energy_pairs.T,marker='.',c='b',edgecolors='k',label='CO-NO pairs')
+    H_bool_pad = np.pad(H_bool,pad_width=((1,1),(1,1)),mode='wrap')
 
-    #integrate
-    mask_x = lambda x: (x>=(-1.1))*(x<=(-0.4))
-    mask_y = lambda y: (y>=(-1.3))*(y<=(-0.71))
+    CO_block_mask = H_bool_pad[1:-1,1:-1] + H_bool_pad[:-2,1:-1] + H_bool_pad[1:-1,:-2]
 
-    x_centers = (xedges[1:] + xedges[:-1])/2
-    y_centers = (yedges[1:] + yedges[:-1])/2
+    NO_energies = NO_energies[np.invert(H_bool).flatten()]
+    CO_energies = CO_energies[np.invert(CO_block_mask).flatten()]
 
-    x_centers_id=np.where(mask_x(x_centers))[0]
-    y_centers_id=np.where(mask_y(y_centers))[0]
 
-    prob_density_urea = np.sum(prob_density.T[y_centers_id[0]:y_centers_id[-1],x_centers_id[0]:x_centers_id[-1]])
 
-    ax.fill_between([-1.1,-0.4],[-1.3,-1.3],y2=[-0.71,-0.71],color="tab:blue",alpha=0.2)
 
-    ylim=ax.get_ylim()
-    xlim=ax.get_xlim()
+    # fig,ax,(hist_x,xedges),(hist_y,yedges), prob_density = probability_density_plot(CO_energies,NO_energies,return_hists=True)
+    
 
-    plt.plot([-0.4,-0.4],ylim,c="k",ls="--",alpha=0.6)
-    plt.plot(xlim,[-0.71,-0.71],c="k",ls="--",alpha=0.6)
+    
+    fig,ax = plt.subplots(figsize=(5,5))
+    fig.subplots_adjust(wspace=0.5)
+    ax.set_ylim(-1.5,-0.34)
+    ax.set_xlim(-1.8,-0.1)
+    
 
-    plt.plot([-1.1,-1.1],ylim,c="b",ls="--")
-    plt.plot(xlim,[-1.3,-1.3],c="b",ls="--")
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
 
-    ax.set_ylim(ylim)
-    prob=(sum(mask_x(CO_energies))/10000) * (sum(mask_y(NO_energies))/10000)
-    CO_NO_pair_mask_CO = mask_x(CO_NO_energy_pairs[:,0])
-    CO_NO_pair_mask_NO = mask_y(CO_NO_energy_pairs[:,1])
-    n_pairs_in_area = np.sum(CO_NO_pair_mask_CO * CO_NO_pair_mask_NO)
+    
 
-    ax.text((-0.4-1.1)/2,(-1.3-0.71)/2+0.35,f"pairs in area/surface atom:\n{n_pairs_in_area/10000}",c="b",alpha=0.8,ha="center",va="center")
-    ax.legend(loc=2)
-    ax.set_ylabel("\u0394$E_{pred}^{*NO}$ [eV]")
+    fig,ax,(hist_x,xedges),(hist_y,yedges), prob_density = probability_density_plot(CO_energies,NO_energies,return_hists=True,figure=(fig,ax),vmax=80)
+
+
+    ax.scatter(*CO_NO_energy_pairs.T,marker='.',c='b',edgecolors='k',label=f'CO-NO pairs: {len(CO_NO_energy_pairs)}')
+    ax.legend(loc=2, markerscale=2,framealpha=0.4)
+
+    a = 1.88
+    b = - 1.24
+
+
+
+
+    ax.vlines(-0.4, ylim[0],ylim[1],color='k',ls='--',alpha=0.6)
+    ax.hlines(-0.71, xlim[0],xlim[1],color='k',ls='--',alpha=0.6)
+    ax.hlines(a*(-0.1)+b, xlim[0],xlim[1],color='b',ls='--')
+    ax.set_xlim(*xlim)
+    ax.set_ylim(*ylim)
+
+
     ax.set_xlabel("\u0394$E_{pred}^{*CO}$ [eV]")
-    plt.tight_layout()
-    #print(prob)
-    plt.savefig(f'Energy_dist_{method}.png',dpi=400)
+    ax.set_ylabel("\u0394$E_{pred}^{*NO}$ [eV]")
+
+
+    ax.xaxis.set_major_locator(MultipleLocator(0.4))
+    ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+    ax.yaxis.set_major_locator(MultipleLocator(0.2))
+    ax.yaxis.set_minor_locator(MultipleLocator(0.1))
+
+
+
+  
+
+
+    # x_centers = (xedges[1:] + xedges[:-1])/2
+    # y_centers = (yedges[1:] + yedges[:-1])/2
+
+    # x_centers_id=np.where(x_centers<=-0.4)[0]
+    # y_centers_id=np.where(y_centers<=-0.71)[0]
+
+    #prob2 = np.sum(prob_density.T[y_centers_id[0]:y_centers_id[-1]+1,x_centers_id[0]:x_centers_id[-1]+1]) * (x_centers[x_centers_id[1]]-x_centers[x_centers_id[0]]) * (y_centers[y_centers_id[1]]-y_centers[y_centers_id[0]]) 
+
+    #print(prob2)
+    # alloy_sub_list = [metals[i] + '$_{' + str(int(composition[i]*100)) + '}$' for i in range(len(metals)) if composition[i]>0]
+    # alloy_sub = ''.join(alloy_sub_list)
+    # props = dict(boxstyle='round', facecolor='white', alpha=0.3)
+    # ax.text(xlim[0]+0.05,ylim[1]-0.05,alloy_sub,ha='left',va='top',color='k',bbox=props)
+
+    # ax.text(xlim[0]+0.02,-0.73,f'$P_{{area}}$ = {probability:.4f}',ha='left',va='top',color='tab:blue')
+    # ax.fill_between([xlim[0],-0.4],ylim[0],-0.71,alpha=0.3,hatch='///',color='none',linewidth=0,edgecolor='tab:blue')
+    
+
+    #ax.set_aspect('equal')
+    #plt.tight_layout()
+    #plt.show()
+    # plt.savefig('test.png',dpi=400)
+    # break
+
+
+    fig.subplots_adjust(bottom=0.2,left=0.2,right=0.8,top=0.8)
+
+
+    plt.savefig(f'Energy_dist_{method}.png',dpi=600,bbox_inches='tight')
