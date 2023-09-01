@@ -9,7 +9,7 @@ sys.path.append('..')
 from scripts.methods import get_sites
 from scripts import metals
 
-C_color = np.array([100,100,100])/255
+C_color = np.array([80,80,80])/255
 N_color = np.array([48,80,248])/255
 H_color = np.array([179,227,245])/255
 

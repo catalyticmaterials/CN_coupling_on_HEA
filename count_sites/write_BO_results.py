@@ -1,6 +1,6 @@
 import numpy as np
 
-for method in ['equilibrium']:
+for method in ['equilibrium','dynamic','MC']:
     print(method)
     for P_NO in ['1','0.5','0.1']:
 
