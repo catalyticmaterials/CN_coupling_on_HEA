@@ -1,23 +1,24 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator
 from matplotlib.lines import Line2D
 from joblib import load
 import itertools as it
 import sys
-sys.path.append('../..')
+sys.path.append('..')
 from scripts import metals, n_metals, metal_colors
 
 
 ads="H"
 
 #Get regressor
-reg = load(f'{ads}.joblib')
+reg = load(f'{ads}/{ads}.joblib')
 
 # Get calculated samples
-data = np.loadtxt(f'../../features/{ads}.csv', delimiter=',', skiprows=1)
+data = np.loadtxt(f'../features/{ads}.csv', delimiter=',', skiprows=1,usecols=range(46))
 ensembles = data[:, :35]
-features = data[:,: -3]
-energies = data[:, -3]
+features = data[:,: -1]
+energies = data[:, -1]
 
 # Get number of samples
 n_samples = len(energies)
@@ -37,7 +38,7 @@ colors = [metal_colors[ensembles_str[list(ensemble).index(1)]] for ensemble in e
 	#preds[sample_idx] = reg.predict(tuple(ensemble), feature)
     
     
-fig,ax=plt.subplots(dpi=400)
+fig,ax=plt.subplots(figsize=(5,5))
 
 ax.scatter(energies,preds,c=colors)
 
@@ -69,7 +70,16 @@ MAE = np.mean(np.abs(preds-energies))
 
 plt.text(lim[0]+0.03, 0.05, f"R\u00b2 = {R2}\nMAE = {MAE:0.3f}")
 
-ax.set_xlabel("\u0394$E_{DFT}^{*H}$ [eV]")
-ax.set_ylabel("\u0394$E_{pred}^{*H}$ [eV]")
-plt.tight_layout()
-plt.savefig("H_parity_plot.png")
+ax.set_xlabel("\u0394$G_{DFT}^{*H}$ [eV]")
+ax.set_ylabel("\u0394$G_{pred}^{*H}$ [eV]")
+
+ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+ax.xaxis.set_major_locator(MultipleLocator(0.5))
+ax.yaxis.set_minor_locator(MultipleLocator(0.1))
+ax.yaxis.set_major_locator(MultipleLocator(0.5))
+
+
+# plt.tight_layout()
+plt.subplots_adjust(bottom=0.2,left=0.2)
+# plt.savefig("H/H_parity_plot.png",dpi=600,bbox_inches='tight')
+plt.show()

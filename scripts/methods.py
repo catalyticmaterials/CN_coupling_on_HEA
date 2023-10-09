@@ -45,7 +45,7 @@ def CO_NO_pairs_energy(CO_coverage_bool, NO_coverage_bool,CO_energy_grid, NO_ene
 
     return CO_NO_energy_pairs
 
-def count_sites(composition,P_CO,P_NO, metals, method, eU=0, n=100, return_ads_energies=False):
+def count_sites(composition,P_CO,P_NO, metals, method, eU=0, n=100, return_ads_energies=False,print_result=False):
     t_start = time()
 
     # Simulate surface
@@ -54,7 +54,8 @@ def count_sites(composition,P_CO,P_NO, metals, method, eU=0, n=100, return_ads_e
     # count sites
     active_sites = count_CO_NO_pairs(CO_coverage_bool, NO_coverage_bool)
 
-    print(str(np.around(composition,decimals=4)),"fractional active sites:",active_sites,"evaluation time (s):",time()-t_start)
+    if print_result:
+        print(str(np.around(composition,decimals=4)),"fractional active sites:",active_sites,"evaluation time (s):",time()-t_start)
 
     if return_ads_energies:
         CO_ads = CO_energy_grid[CO_coverage_bool]

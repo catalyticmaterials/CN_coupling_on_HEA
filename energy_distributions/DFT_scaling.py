@@ -8,15 +8,18 @@ import pandas as pd
 import ast
 import sys
 sys.path.append("..")
-from scripts import metals, metal_colors
+from scripts import metals, metal_colors, G_corr
 
-CO_data = np.loadtxt("../features/CO.csv",delimiter=',',skiprows=1,usecols=(0,1,2,3,4,20,22,23))
+plt.rc('font', size=14)
+plt.rc('ytick', labelsize=12)
+plt.rc('xtick', labelsize=12) 
+plt.rc('legend', fontsize=12)
+plt.rc('lines', linewidth=1.2,markersize=8)
 
-# NO_data = np.loadtxt("../features/NO_fcc.csv",delimiter=',',skiprows=1)
-# H_data = np.loadtxt("../features/CO.csv",delimiter=',',skiprows=1)
-
-NO_df = pd.read_csv("../features/NO_fcc.csv",sep=',',header=None, skiprows=1)
-H_df = pd.read_csv("../features/H.csv",sep=',',header=None, skiprows=1)
+# Load data, skip pure metals
+CO_data = np.loadtxt("../features/CO.csv",delimiter=',',skiprows=6,usecols=(0,1,2,3,4,20,22,23))
+NO_df = pd.read_csv("../features/NO_fcc.csv",sep=',',header=None, skiprows=6)
+H_df = pd.read_csv("../features/H.csv",sep=',',header=None, skiprows=6)
 
 CO_site_metal = np.array([metals[i] for i in np.nonzero(CO_data[:,:5])[1]])
 CO_energies, CO_slabs_ids, CO_site_ids = CO_data[:,-3], CO_data[:,-2], CO_data[:,-1]
@@ -35,9 +38,9 @@ H_site_ids = np.array([ast.literal_eval(site_ids.replace(' ',',')) for site_ids 
 
 
 # Correct to adsorption energies
-NO_energies-=0.71
-CO_energies-=0.4
-H_energies-=0.1
+NO_energies-=G_corr['NO']
+CO_energies-=G_corr['CO']
+H_energies-=G_corr['H']
 
 
 fig, (ax1,ax2,ax3) = plt.subplots(nrows=1,ncols=3,figsize=(13,4))
@@ -65,7 +68,7 @@ for metal in metals:
 
         if np.any(H_energies_masked<=(-0.1)):
             
-            ax3.scatter(np.full(len(NO_energies_masked),CO_energy), NO_energies_masked,c=metal_colors[metal],marker='.',alpha=0.5)
+            ax3.scatter(np.full(len(NO_energies_masked),CO_energy), NO_energies_masked,edgecolors=metal_colors[metal],marker='.',facecolors='none',linewidth=1)
             count+=1
 
         else:
@@ -101,26 +104,27 @@ xlim2, ylim2 = ax2.get_xlim(), ax2.get_ylim()
 xlim3, ylim3 = ax3.get_xlim(), ax3.get_ylim()
 
 
-ax1.vlines(-0.1, ylim1[0],ylim1[1],color='k',ls='--',alpha=0.6)
-ax1.hlines(-0.4, xlim1[0],xlim1[1],color='k',ls='--',alpha=0.6)
+ax1.vlines(-G_corr['H'], ylim1[0],ylim1[1],color='k',ls='--',alpha=0.6)
+ax1.hlines(-G_corr['CO'], xlim1[0],xlim1[1],color='k',ls='--',alpha=0.6)
 ax1.set_xlim(*xlim1)
 ax1.set_ylim(*ylim1)
 
-
+# scaling_str = '\u0394$E_{DFT}^{*NO} = $' + f'{a:.2f}' + '\u0394$E_{DFT}^{*H}$' + f'\u2212{abs(b):.2f} eV'
 xarr = np.array([xlim2[0],xlim2[1]])
-ax2.plot(xarr,a*xarr + b,label='Fit',c='b',ls='--')
+ax2.plot(xarr,a*xarr + b,c='b',ls='--',label='Fit')
 
-ax2.vlines(-0.1, ylim2[0],ylim2[1],color='k',ls='--',alpha=0.6)
-ax2.hlines(-0.71, xlim2[0],xlim2[1],color='k',ls='--',alpha=0.6)
+ax2.vlines(-G_corr['H'], ylim2[0],ylim2[1],color='k',ls='--',alpha=0.6)
+ax2.hlines(-G_corr['NO'], xlim2[0],xlim2[1],color='k',ls='--',alpha=0.6)
 ax2.set_xlim(*xlim2)
 ax2.set_ylim(*ylim2)
 
-ax2.text(-0.1+0.02,-1.65,'\u0394$E_{DFT}^{*NO} = $' + f'{a:.2f}' + '\u0394$E_{DFT}^{*H}$' + f'\u2212{abs(b):.2f} eV',fontsize=9,color='b')
+ax2.text(-G_corr['H']+.02,-1.7,'\u0394$E_{DFT}^{*NO} = $' + f'{a:.2f}' + '\u0394$E_{DFT}^{*H}$' + f'\u2212{abs(b):.2f} eV',fontsize=9,color='b',va='center',ha='left')
+
 ax2.legend(loc=2)
 
-ax3.vlines(-0.4, ylim3[0],ylim3[1],color='k',ls='--',alpha=0.6)
-ax3.hlines(-0.71, xlim3[0],xlim3[1],color='k',ls='--',alpha=0.6)
-ax3.hlines(a*(-0.1)+b, xlim3[0],xlim3[1],color='b',ls='--')
+ax3.vlines(-G_corr['CO'], ylim3[0],ylim3[1],color='k',ls='--',alpha=0.6)
+ax3.hlines(-G_corr['NO'], xlim3[0],xlim3[1],color='k',ls='--',alpha=0.6)
+ax3.hlines(a*(-G_corr['H'])+b, xlim3[0],xlim3[1],color='b',ls='--')
 ax3.set_xlim(*xlim3)
 ax3.set_ylim(*ylim3)
 
@@ -134,12 +138,15 @@ ax3.set_xlabel("\u0394$E_{DFT}^{*CO}$ [eV]")
 ax3.set_ylabel("\u0394$E_{DFT}^{*NO}$ [eV]")
 
 for i,ax in enumerate([ax1,ax2,ax3]):
-    if i==2:
-        ax.xaxis.set_major_locator(MultipleLocator(0.5))
-        ax.xaxis.set_minor_locator(MultipleLocator(0.1))
-    else:
-        ax.xaxis.set_major_locator(MultipleLocator(0.2))
-        ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+    # if i==2:
+    #     ax.xaxis.set_major_locator(MultipleLocator(0.5))
+    #     ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+    # else:
+    #     ax.xaxis.set_major_locator(MultipleLocator(0.2))
+    #     ax.xaxis.set_minor_locator(MultipleLocator(0.1))
+    
+    ax.xaxis.set_major_locator(MultipleLocator(0.5))
+    ax.xaxis.set_minor_locator(MultipleLocator(0.1))
     ax.yaxis.set_major_locator(MultipleLocator(0.5))
     ax.yaxis.set_minor_locator(MultipleLocator(0.1))
   
@@ -148,16 +155,19 @@ for i,ax in enumerate([ax1,ax2,ax3]):
 
 handles = []
 for metal in metals:
-    handles.append(Line2D([0], [0], marker='o', color="w", label=metal,markerfacecolor=metal_colors[metal], markersize=10)) 
-
-#plt.tight_layout()
-#
-
-fig.legend(handles=handles, labels=metals,
-           loc='outside upper center', ncol=5, mode='expand',fontsize=10,bbox_to_anchor=(0.063, .5, 0.93, 0.5),fancybox=False)
+    handles.append(Line2D([0], [0], marker='o', color="w", label=metal,markerfacecolor=metal_colors[metal], markersize=12)) 
 
 plt.tight_layout()
-fig.subplots_adjust(top=0.9)
-plt.savefig('DFT_scaling.png', dpi=400)
 
-print(count)
+
+pos1 = ax1.get_position()
+pos3 = ax3.get_position()
+
+fig.legend(handles=handles, labels=metals,
+           loc='outside upper center', ncol=5, mode='expand',fontsize=12,bbox_to_anchor=(pos1.x0, .5, pos3.x1-pos1.x0, 0.5),fancybox=False)
+
+
+# plt.tight_layout()
+fig.subplots_adjust(top=0.89)
+plt.savefig('DFT_scaling.png', dpi=600)
+# plt.show()

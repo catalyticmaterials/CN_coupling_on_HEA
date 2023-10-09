@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.gaussian_process.kernels import ConstantKernel as C, RBF, WhiteKernel
 from sklearn.gaussian_process import GaussianProcessRegressor as GPR
-import os
+from tqdm import tqdm
 import sys
 sys.path.append("..")
 from scripts.compositionspace_functions import molar_fractions_to_cartesians
@@ -35,10 +35,18 @@ for P_NO in [1,0.5,0.1]:
     gpr.fit(r_train,n_sites)
 
     # Bayesian optimization
-    for i in range(200):
+    for i in tqdm(range(200)):
         # Update training list and get next sample
         f_train= BS.get_molar_fraction_samples(f_train, n_sites, gpr)
         f_next = f_train[-1]
+
+        # If next molar fraction is near 1 for one element, get pure metal instead
+        if np.any(f_next>=0.993749):
+            mask = f_next>=0.993749
+            f_next = np.zeros(5)
+            f_next[mask] = 1
+            f_train[-1] = f_next
+
         # Get number of sites for new sample and append result
         n_sites = np.append(n_sites,count_sites(f_next, P_CO=1.0, P_NO=P_NO,metals=metals,method='dyn'))
         r_train=molar_fractions_to_cartesians(f_train)

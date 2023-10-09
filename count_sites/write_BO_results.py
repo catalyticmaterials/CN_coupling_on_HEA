@@ -20,7 +20,7 @@ for method in ['equilibrium','dynamic','MC']:
             ns = dataline[-1]
             dist = np.linalg.norm(mfs-mf,axis=1)
 
-            if np.all(dist>0.1):
+            if np.all(dist>0.0):
                 mfs = np.vstack((mfs,mf))
                 n_sites = np.append(n_sites,ns)
 

@@ -2,10 +2,13 @@ import numpy as np
 from ase.db import connect
 from collections import Counter
 import itertools as it
-from site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
+import sys
+sys.path.append('..')
+from scripts.site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
+from scripts import metals
 
-# Define metals in the considered alloys
-metals = ['Ag','Au', 'Cu', 'Pd','Pt']
+# Free energy correction
+dG_corr_NO = 0.56
 
 # Get number of metals
 n_metals = len(metals)
@@ -20,20 +23,62 @@ n_ensembles = len(ensembles)
 n_zones = 2
 
 #Free energy reference to Cu
-DG_Cu = +0.45
+# DG_Cu = +0.45
 # Get Cu(111) reference energy
 path = '../databases'
-with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
-	 connect(f'{path}/single_element_NO_fcc_out.db') as db_ads:
+# with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
+# 	 connect(f'{path}/single_element_NO_fcc_out.db') as db_ads:
 	 
-	E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
+	# E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
 
 # Set filename
 filename = 'NO_fcc.csv'
 
-# Write header to file
-with open(filename, 'w') as file_:
-	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab,site id')
+# # Write header to file
+# with open(filename, 'w') as file_:
+# 	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab,site id')
+
+
+
+with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
+	 connect(f'{path}/single_element_NO_fcc_out.db') as db_ads,\
+     connect(f'{path}/molecules_out.db') as db_gas,\
+    open(filename, 'w') as file_:
+
+    file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab,site id')
+
+    E_NO = db_gas.get(molecule='NO').energy + 0.29
+
+    for row_ads in db_ads.select():
+
+        ensemble = [row_ads.metal]*3
+            
+        # Get index of the current ensemble
+        idx_ensemble = ensembles.index(tuple(ensemble))
+        
+        # Initiate list of features
+        features = [0]*n_ensembles
+
+        # One-hot encode the adsorption ensemble
+        features[idx_ensemble] = 1
+
+        metal_feature = [0]*5
+        metal_feature[metals.index(row_ads.metal)] = 3
+
+        features += 2*metal_feature
+        features_str = ','.join(map(str, features))
+
+        # Get corresponding slab without adsorbate
+        row_slab = db_slab.get(metal=row_ads.metal)
+
+        # Get adsorption energy as the difference between the slab with and without adsorbate
+        energy = row_ads.energy - row_slab.energy - E_NO + dG_corr_NO
+
+        site_id = np.array([0,1,3])
+
+        # Write features and energy to file
+        file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{site_id}')
+
 
 skipped_rows=0
 # Connect to database with atomic structures of *CO
@@ -226,7 +271,7 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         row_slab = db_slab.get(slab_idx=row_ads.slab_idx)
 		
 		# Get adsorption energy as the difference between the slab with and without adsorbate
-        energy = row_ads.energy - row_slab.energy - E_ref
+        energy = row_ads.energy - row_slab.energy - E_NO + dG_corr_NO
 		
 		# Write features and energy to file
         file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{ids_site%47 - 36}')

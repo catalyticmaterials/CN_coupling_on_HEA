@@ -3,19 +3,15 @@ from ase.db import connect
 from collections import Counter
 from ase.data import covalent_radii
 
+import sys
+sys.path.append('..')
+from scripts.site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
+
 # Define metals in the considered alloys
 metals = ['Ag','Au', 'Cu', 'Pd','Pt']
 
 #Database path
 path = '../databases'
-
-#Free energy reference to Cu
-DG_Cu = 0.18
-# Get Cu(111) reference energy
-with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
-	 connect(f'{path}/single_element_CO_out.db') as db_ads:
-	 
-	E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
 
 
 # Set filename
@@ -24,6 +20,36 @@ filename = 'CO.csv'
 # Write header to file
 with open(filename, 'w') as file_:
 	file_.write('site, 1st layer, 2nd layer, 3rd layer, adsorption energy (eV), row id ads, row id slab, site id')
+
+
+#Free energy reference to Cu
+DG_Cu = 0.12
+# Get Cu(111) reference energy
+with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
+	 connect(f'{path}/single_element_CO_out.db') as db_ads,\
+	open(filename, 'a') as file_:
+	 
+	E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
+
+	for row_ads in db_ads.select():
+
+		metal_index = metals.index(row_ads.metal)
+
+		site_feature = np.zeros(5,dtype=int)
+		site_feature[metal_index] = 1
+
+		features = np.concatenate((site_feature,site_feature*6, site_feature*3, site_feature*3))
+		features_str = ','.join(map(str, features))
+
+		# Get corresponding slab without adsorbate
+		row_slab = db_slab.get(metal=row_ads.metal)
+		
+		# Get adsorption energy as the difference between the slab with and without adsorbate
+		energy = row_ads.energy - row_slab.energy - E_ref
+		
+		# Write features and energy to file
+		file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},0')
+
 
 # Connect to database with atomic structures of *CO
 with connect(f'{path}/slabs_out.db') as db_slab,\
@@ -54,31 +80,53 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
 		# Get squared distances to the 1st layer atoms from the carbon atom
 		dists_sq = np.sum((atoms_3x3.positions[ids_1st] - pos_C)**2, axis=1)
 		
-		## Check if N not on ontop site
-        # Get the three shortest distances
-		dist_3 = np.sort(np.sqrt(dists_sq))[:3]  
+		# ## Check if C not on ontop site
+        # # Get the three shortest distances
+		# dist_3 = np.sort(np.sqrt(dists_sq))[:3]  
         
-        # Get one atom from 4th and 5th layer 
-		id_4th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 4])[0]
-		id_5th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 5])[7]
+        # # Get one atom from 4th and 5th layer 
+		# id_4th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 4])[0]
+		# id_5th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 5])[7]
         
-        # Get distance in z
-		z_dist = atoms_3x3.positions[id_4th][2] - atoms_3x3.positions[id_5th][2]
+        # # Get distance in z
+		# z_dist = atoms_3x3.positions[id_4th][2] - atoms_3x3.positions[id_5th][2]
         
-        # Set average radius of atoms
-		r = z_dist/2
-        # Get radius of N
-		r_C = covalent_radii[6]
+        # # Set average radius of atoms
+		# r = z_dist/2
+        # # Get radius of N
+		# r_C = covalent_radii[6]
         
-        #Set reference distance
-		r_ref = r + r_C
+        # #Set reference distance
+		# r_ref = r + r_C
         
-        #Get number of distances below reference +20%
-		n = np.sum(dist_3 < r_ref*1.2)
+        # #Get number of distances below reference +20%
+		# n = np.sum(dist_3 < r_ref*1.2)
 
-		if n>1:
+		# if n>1:
+		# 	print("Skips row",row_ads.id,". Not ontop site")
+		# 	#Continue with next structure if the site is not on-top.
+		# 	continue
+
+
+		# Get posittion of atoms in 1st layer
+		pos_1st=atoms_3x3.positions[ids_1st]
+		# Get position of each site type in xy-plane from the 1st layer atom position
+		sites_xy = get_site_pos_in_xy(pos_1st)
+		fcc_sites_pos, hcp_sites_pos, bridge_sites_pos, ontop_sites_pos = sites_xy
+		# Get site type and min dist site id.
+		nearest_site, min_dist_ids = get_nearest_sites_in_xy(*sites_xy,pos_C)
+
+		# If nearest site is bridge, locate the next nearest site
+		if nearest_site=="bridge": 
+			fcc_dist = np.linalg.norm(fcc_sites_pos[min_dist_ids[0]][:2] - pos_C[:2])
+			hcp_dist =np.linalg.norm(hcp_sites_pos[min_dist_ids[1]][:2] - pos_C[:2])
+			top_dist =np.linalg.norm(ontop_sites_pos[min_dist_ids[3]][:2] - pos_C[:2])
+			site_names = ["fcc","hcp","ontop"]
+			nearest_site = site_names[np.argmin([fcc_dist,hcp_dist,top_dist])]
+            
+		if nearest_site!="ontop":
 			print("Skips row",row_ads.id,". Not ontop site")
-			#Continue with next structure if the site is not on-top.
+			# Continue with next structure if the site is not on-top.
 			continue
 		
 		# Get the closest surface atom to the carbon (the on-top adsorption site)

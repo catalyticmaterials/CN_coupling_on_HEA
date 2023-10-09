@@ -71,7 +71,7 @@ for P_NO in [1,0.1]:
     ads_count = 0
     break_bool = False
 
-    for iteration in tqdm(range(1,int(2e+5)+1)):
+    for iteration in tqdm(range(1,int(2.5e+5)+1)):
         r = np.random.rand()
         if r<= p_CO: # Adsorb CO
             # Pick a random site to adsorb
@@ -208,7 +208,7 @@ for P_NO in [1,0.1]:
 
         l4,=ax2.plot(np.array(iterations)/1000,ads_rate,c="teal",label="Adsorption Rate, P$_{NO}=0.1$",alpha=0.5)
 
-ax.set_xlim(0,200)
+ax.set_xlim(0,250)
 ax.set_ylim(None,initial_ads_energy/1000)
 ax2.set_ylim(None,np.max(max_ads_rate))
 
@@ -238,5 +238,5 @@ ax.legend(handles=[l1,l2,l3,l4],loc=1)
 ax.text(25,ylim[0] + 0.97*(ylim[1]-ylim[0]) , s=text,va='top',ha='left')
 
 plt.tight_layout()
-plt.savefig(f'MC/MC_Cu.png',dpi=400)
+plt.savefig(f'MC/MC_Cu.png',dpi=600)
 

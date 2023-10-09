@@ -4,7 +4,7 @@ import itertools as it
 from collections import Counter
 from math import factorial as fac
 import sys
-sys.path.append('../..')
+sys.path.append('..')
 from scripts import metals, n_metals
 from scripts.regressor import MultiLinearRegressor
 
@@ -14,10 +14,12 @@ n_zones = len(n_atoms_zones)
 reg = MultiLinearRegressor(n_atoms_zones)
 
 # Read features from file
-filename = '../../features/CO.csv'
+filename = '../features/CO.csv'
 data = np.loadtxt(filename, delimiter=',', skiprows=1)
 features = data[:, :-4]
 energies = data[:, -4]
+
+
 
 # Split features and energies into ensembles
 ensembles = [(1,0,0,0,0), (0,1,0,0,0), (0,0,1,0,0), (0,0,0,1,0), (0,0,0,0,1)]
@@ -33,7 +35,7 @@ for ensemble in ensembles:
 intercepts, slopes = reg.get_parameters()
 for metal, ens, intercept, slopes_ in zip(metals, ensembles, intercepts.values(), slopes.values()):
 	
-	filename = f'CO_{metal}_linear_parameters.csv'
+	filename = f'CO/CO_{metal}_linear_parameters.csv'
 	with open(filename, 'w') as file_:
 		
 		file_.write(f'intercept,{intercept:>10.6f}')
@@ -46,7 +48,7 @@ for metal, ens, intercept, slopes_ in zip(metals, ensembles, intercepts.values()
 	print(f'[SAVED] {filename}')
 
 # Save regressor to file
-filename = 'CO.joblib'
+filename = 'CO/CO.joblib'
 dump(reg, filename)
 print(f'[SAVED] {filename}')
 
@@ -105,7 +107,7 @@ for ensemble, metal in zip(ensembles, metals):
 	preds = reg.predict(ensemble, features)
 	
 	# Write predictions to file
-	filename = f'CO_{metal}_all_sites.csv'
+	filename = f'CO/CO_{metal}_all_sites.csv'
 	out = np.concatenate((features, preds.reshape(-1, 1), multiplicities.reshape(-1, 1)), axis=1)
 	fmt = '%d,' * (n_metals*n_zones) + '%.6f,' + '%d'
 	header = ' '*(2*n_metals*n_zones-11) + 'features, prediction, multiplicity'

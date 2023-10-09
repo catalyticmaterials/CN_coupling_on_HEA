@@ -3,7 +3,7 @@ import itertools as it
 from collections import Counter
 from math import factorial as fac
 import sys
-sys.path.append('../..')
+sys.path.append('..')
 from scripts import metals, n_metals
 from scripts.regressor import LinearRegressor
 from joblib import dump
@@ -21,12 +21,10 @@ n_atoms_zones = [3, 3]
 n_zones = len(n_atoms_zones)
 
 # Read features from file
-filename = '../../features/H.csv'
-data = np.loadtxt(filename, delimiter=',', skiprows=1)
-features = data[:, :-4]
-energies = data[:, -4]
-
-
+filename = '../features/H.csv'
+data = np.loadtxt(filename, delimiter=',', skiprows=1,usecols=range(46))
+features = data[:, :-1]
+energies = data[:, -1]
 
 # Define regressor
 reg = LinearRegressor(n_ensembles, n_atoms_zones, n_metals)
@@ -35,7 +33,7 @@ reg = LinearRegressor(n_ensembles, n_atoms_zones, n_metals)
 reg.fit(features, energies)
 
 # Save regressor to file
-filename = 'H.joblib'
+filename = 'H/H.joblib'
 dump(reg, filename)
 print(f'[SAVED] {filename}')
 
@@ -46,7 +44,7 @@ ens_slopes = reg.params[:n_ensembles]
 slopes = reg.params[n_ensembles:]
 
 # Save linear parameters to file
-filename = f'H_linear_parameters.csv'
+filename = 'H/H_linear_parameters.csv'
 with open(filename, 'w') as file_:
 	
 	# Write ensemble parameters to file
@@ -117,7 +115,7 @@ for ens_idx, (ensemble, ensemble_as_numbers) in enumerate(zip(ensembles, ensembl
 preds = reg.predict(features)
 
 # Write predictions to file
-filename = 'H_all_sites.csv'
+filename = 'H/H_all_sites.csv'
 out = np.concatenate((features, preds.reshape(-1, 1), multiplicities.reshape(-1, 1)), axis=1)
 fmt = '%d,' * (n_ensembles + n_metals*n_zones) + '%.6f,' + '%d'
 header = ' '*(2*(n_ensembles + n_metals*n_zones)-11) + 'features, prediction, multiplicity'

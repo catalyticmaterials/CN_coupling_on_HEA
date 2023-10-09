@@ -34,7 +34,7 @@ for method,axes_row in zip(['eq','dyn','mc'],axes):
         
         ax.set_xticks(n_list)
 
-        ax.set_ylim(0.0,0.075)
+        ax.set_ylim(0.0,0.11)
 
         ax.yaxis.set_major_locator(MultipleLocator(0.02))
         ax.yaxis.set_minor_locator(MultipleLocator(0.01))

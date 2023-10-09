@@ -1,56 +1,15 @@
 import numpy as np
 from ase.db import connect
+from ase.io import Trajectory
 from collections import Counter
 import itertools as it
-from site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
+import sys
+sys.path.append('..')
+from scripts.site_position_functions import get_nearest_sites_in_xy, get_site_pos_in_xy
+from scripts import metals
 
-
-# def get_site_pos_in_xy(pos_1st):
-#     # Rearange positions so that they are ordered by layer
-#     pos_1st_ = np.array([pos_1st[(9*3*i)+j*3:3+3*9*i+j*3] for j in range(9) for i in range(3)])
-#     pos_1st_ = pos_1st_.reshape(81,3)
-#     #print(pos_1st_)
-#     grid = pos_1st_.reshape(9,9,-1)
-#     #print(grid)
-#     grid = np.pad(grid,pad_width=((1,1),(1,1),(0,0)),mode="wrap")
-    
-#     fcc_sites =  (grid[1:-1,1:-1] + grid[1:-1,2:] + grid[2:,1:-1])/3
-    
-#     hcp_sites = (grid[1:-1,1:-1] + grid[2:,:-2] +grid[2:,1:-1])/3
-    
-#     bridge_sites1 = (grid[1:-1,1:-1] + grid[1:-1,2:])/2
-#     bridge_sites2 = (grid[1:-1,1:-1] + grid[2:,1:-1])/2
-#     bridge_sites3 = (grid[1:-1,1:-1] + grid[2:,:-2])/2
-    
-    
-#     # cut off ends as we are only interested in sites in the middle 3x3 atoms anyway
-#     fcc_sites = fcc_sites[2:-2,2:-2]
-#     hcp_sites = hcp_sites[2:-2,2:-2]
-#     bridge_sites1 = bridge_sites1[2:-2,2:-2]
-#     bridge_sites2 = bridge_sites2[2:-2,2:-2]
-#     bridge_sites3 = bridge_sites3[2:-2,2:-2]
-#     ontop_sites = np.copy(grid[3:-3,3:-3]).reshape(-1,3)
-    
-#     bridge_sites = np.vstack([bridge_sites1.reshape(-1,3),bridge_sites2.reshape(-1,3),bridge_sites3.reshape(-1,3)])
-#     return fcc_sites.reshape(-1,3), hcp_sites.reshape(-1,3), bridge_sites,ontop_sites
-
-# def get_nearest_sites_in_xy(fcc,hcp,bridge,ontop,ads):
-#     fcc_dist = np.sum((fcc[:,:2]-ads[:2])**2,axis=1)
-#     hcp_dist = np.sum((hcp[:,:2]-ads[:2])**2,axis=1)
-#     bridge_dist = np.sum((bridge[:,:2]-ads[:2])**2,axis=1)
-#     ontop_dist = np.sum((ontop[:,:2]-ads[:2])**2,axis=1)
-    
-#     min_ids = [np.argmin(dist) for dist in (fcc_dist,hcp_dist,bridge_dist,ontop_dist)]
-#     min_dists = [dist[min_ids[i]] for i,dist in enumerate((fcc_dist,hcp_dist,bridge_dist,ontop_dist))]
-    
-#     site_str = ["fcc","hcp","bridge","ontop"]
-    
-#     nearest_site_type = site_str[np.argmin(min_dists)]
-    
-#     return nearest_site_type, min_ids
-
-# Define metals in the considered alloys
-metals = ['Ag','Au', 'Cu', 'Pd','Pt']
+# Free energy correction
+dG_corr_H = 0.2
 
 # Get number of metals
 n_metals = len(metals)
@@ -65,20 +24,61 @@ n_ensembles = len(ensembles)
 n_zones = 2
 
 #Free energy reference to Cu
-DG_Cu = -0.1
+# DG_Cu = -0.1
 # Get Cu(111) reference energy
 path = '../databases'
-with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
-	 connect(f'{path}/single_element_H_out.db') as db_ads:
+# with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
+# 	 connect(f'{path}/single_element_H_out.db') as db_ads,/
+#     connect(f'{path}/molecules_out.db') as db_gas,/
 	 
-	E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
+	# E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
 
 # Set filename
 filename = 'H.csv'
 
 # Write header to file
-with open(filename, 'w') as file_:
-	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab, site id')
+# with open(filename, 'w') as file_:
+# 	file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab, site id')
+
+
+with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
+	 connect(f'{path}/single_element_H_out.db') as db_ads,\
+    connect(f'{path}/molecules_out.db') as db_gas,\
+    open(filename, 'w') as file_:
+
+    file_.write('site, 1st layer, 2nd layer, adsorption energy (eV), row id ads, row id slab, site id') 
+    
+    E_H = 0.5*db_gas.get(molecule='H2').energy
+
+    for row_ads in db_ads.select():
+        ensemble = [row_ads.metal]*3
+            
+        # Get index of the current ensemble
+        idx_ensemble = ensembles.index(tuple(ensemble))
+        
+        # Initiate list of features
+        features = [0]*n_ensembles
+
+        # One-hot encode the adsorption ensemble
+        features[idx_ensemble] = 1
+
+        metal_feature = [0]*5
+        metal_feature[metals.index(row_ads.metal)] = 3
+
+        features += 2*metal_feature
+        features_str = ','.join(map(str, features))
+
+        # Get corresponding slab without adsorbate
+        row_slab = db_slab.get(metal=row_ads.metal)
+
+        # Get adsorption energy as the difference between the slab with and without adsorbate
+        energy = row_ads.energy - row_slab.energy - E_H + dG_corr_H
+
+        site_id = np.array([0,1,3])
+
+        # Write features and energy to file
+        file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{site_id}')
+
 
 skipped_rows=0
 # Connect to database with atomic structures of *CO
@@ -88,12 +88,17 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
 	
 	# Iterate through rows in database
     for row_ads in db_ads.select():
-		# Check for empty atoms object
-        if row_ads.formula =="":
-            continue
+
 		
 		# Get atoms object
-        atoms = db_ads.get_atoms(row_ads.id)
+        if row_ads.id == 425:
+            # Get not fully relaxed structure to obtain cases of AuAuPt ensemble
+            atoms = Trajectory(f'{path}/H_425.traj')[6]
+        elif row_ads.id ==500:
+            # Get not fully relaxed structure to obtain cases of AuAuPt ensemble
+            atoms = Trajectory(f'{path}/H_500.traj')[6]
+        else:
+            atoms = db_ads.get_atoms(row_ads.id)
 		
 		# Repeat atoms object
         atoms_3x3 = atoms.repeat((3,3,1))
@@ -131,12 +136,12 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         dists_sq_1st = np.sum((atoms_3x3.positions[ids_1st] - pos_site)**2, axis=1)
         dists_sq_2nd = np.sum((atoms_3x3.positions[ids_2nd] - pos_site)**2, axis=1)
 		
-        # Get one atom from 4th and 5th layer 
-        id_4th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 4])[0]
-        id_5th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 5])[0]
+        # # Get one atom from 4th and 5th layer 
+        # id_4th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 4])[0]
+        # id_5th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 5])[0]
         
-        # Get distance in z
-        z_dist = atoms_3x3.positions[id_4th][2] - atoms_3x3.positions[id_5th][2]
+        # # Get distance in z
+        # z_dist = atoms_3x3.positions[id_4th][2] - atoms_3x3.positions[id_5th][2]
         
         min_dist_2nd = np.sqrt(np.min(dists_sq_2nd))
 		
@@ -272,8 +277,8 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
         row_slab = db_slab.get(slab_idx=row_ads.slab_idx)
 		
 		# Get adsorption energy as the difference between the slab with and without adsorbate
-        energy = row_ads.energy - row_slab.energy - E_ref
-		
+        energy = atoms.get_total_energy() - row_slab.energy - E_H + dG_corr_H
+
 		# Write features and energy to file
         file_.write(f'\n{features_str},{energy:.6f},{row_ads.id},{row_slab.id},{ids_site%46-36}')
 

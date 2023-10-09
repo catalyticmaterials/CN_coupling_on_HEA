@@ -8,10 +8,16 @@ import itertools as it
 metals = ['Ag', 'Au', 'Cu', 'Pd', 'Pt']
 n_metals = len(metals)
 
+G_corr = {
+    'NO': 0.56,
+    'CO': 0.40,
+    'H': 0.2
+}
+
 def count_elements(elements, n_elems):
 	count = np.zeros(n_elems, dtype=int)
 	for elem in elements:
-	    count[elem] += 1
+		count[elem] += 1
 	return count
 
 def get_molar_fractions(step_size, n_elems, total=1., return_number_of_molar_fractions=False):
