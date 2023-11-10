@@ -3,7 +3,6 @@ __version__ = '1.0'
 from .Simplex import Simplex
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from matplotlib.lines import Line2D
 import numpy as np
 import itertools as it
 import scipy
@@ -13,57 +12,6 @@ from copy import deepcopy
 kB = 1.380649e-4 / 1.602176634  # eV K-1 (exact)
 kBT = kB*300 # eV
 
-def get_activity(energies, E_opt, n_surface_atoms, eU, jD=1.):
-    '''
-    Return the activity per surface atom calculated using the
-    Angewandte Chemie equations 2-4 (doi: 10.1002/anie.202014374)
-    '''
-    jki = np.exp((-np.abs(energies - E_opt) + 0.86 - eU) / kBT)
-    return np.sum(1. / (1. / jki + 1./jD)) / n_surface_atoms
-
-def get_simulated_activities(fs, fs_peaks, std=0.15):
-	'''
-	Function for getting activities from summed normal distributions.
-	´fs´ are the grid of molar fractions to return activities from.
-	´fs_peaks´ are the molar fractions of the normal distribution peaks.
-	´std´ is the standard deviation along the diagonal in the covariance matrix.
-	'''
-	if np.ndim(fs) == 1:
-		fs = fs.reshape(1, -1)
-	
-	# Get cartesian coordinates of molar fractions
-	r = molar_fractions_to_cartesians(fs)
-
-	# Get cartesian coordinates of peak positions
-	r_peaks = molar_fractions_to_cartesians(fs_peaks)
-	
-	# Get number of samples in the grid
-	n_grid_samples = r.shape[0]
-	
-	# Initialize output activity values
-	activities = np.zeros(n_grid_samples)
-	
-	# Get the dimensionality
-	n_dim = r.shape[1]
-	
-	# Define simple independent covariance matrix and its inverse
-	cov = np.eye(n_dim) * std**2
-	inv_cov = np.eye(n_dim) / std**2
-
-	# Iterate through peaks
-	for r_peak in r_peaks:
-		
-		# Make temporary variable
-		z = r - r_peak
-		
-		# Get diagonal elements of the matrix product z.T @ inv_cov @ z
-		diagonal = np.asarray([row @ col for row, col in zip(z @ inv_cov, z)])
-
-		# Update activities with the current peak
-		activities += np.exp(-0.5*diagonal)
-	
-	# Return activities
-	return activities
 
 def get_time_stamp(dt):
 	'''
@@ -528,14 +476,10 @@ def prepare_tetrahedron_plot(ax, elems):
 	
 	return ax
 
-def get_number_of_samples_for_finding_optima(func, sampler_func, n_elems, gpr=None,
+def get_number_of_samples_for_finding_optima(func, sampler_func, n_elems, gpr,
 											 func_args=(), step_size=0.05, max_samples=200):
 	'Return the number of samples necessary for find the optima of the function'
 	
-	# If gaussian process regressor is not given then use the default
-	if gpr is None:
-		from .gaussian_process import GPR
-		gpr = GPR()
 	
 	# Initiate variables and containers
 	fs_train = []

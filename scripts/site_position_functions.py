@@ -4,9 +4,7 @@ def get_site_pos_in_xy(pos_1st):
     # Rearange positions so that they are ordered by layer
     pos_1st_ = np.array([pos_1st[(9*3*i)+j*3:3+3*9*i+j*3] for j in range(9) for i in range(3)])
     pos_1st_ = pos_1st_.reshape(81,3)
-    #print(pos_1st_)
     grid = pos_1st_.reshape(9,9,-1)
-    #print(grid)
     grid = np.pad(grid,pad_width=((1,1),(1,1),(0,0)),mode="wrap")
     
     fcc_sites =  (grid[1:-1,1:-1] + grid[1:-1,2:] + grid[2:,1:-1])/3

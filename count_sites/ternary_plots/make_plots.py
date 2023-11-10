@@ -31,11 +31,7 @@ for method in ['equilibrium','dynamic','MC']:
         n_sites1,n_sites05,n_sites01 = n_sites[mask].T
         ternary_grid_mf = np.delete(ternary_grid_mf,excl_ind,axis=1)
         ternary_grid = pt.molar_fractions_to_cartesians(ternary_grid_mf)
-        #print(pt.molar_fractions_to_cartesians(ternary_grid_mf).T[:10,:2])
-        #print(ternary_grid[:10])
-        #print(np.all(pt.molar_fractions_to_cartesians(ternary_grid_mf[:,:3]).T==ternary_grid))
-        
-        
+
         # Make directory of the alloy name
         alloy=''.join(elements)
         folder_name = f'ternary_plots/{alloy}'

@@ -6,12 +6,11 @@ import sys
 sys.path.append("..")
 from scripts.compositionspace_functions import molar_fractions_to_cartesians
 from scripts.bayesian_sampling import BayesianSampler
-#from shared_params.gaussian_process_regressor import GPR
 from scripts.methods import count_selectivity
 
 metals = ['Ag','Au', 'Cu', 'Pd','Pt']
 
-
+# Function to optimize
 def CN_selectivity(composition,P_NO,P_CO=1, method='mc'):
     H, NO_NH3, NO_CN, pairs = count_selectivity(composition,P_CO,P_NO, metals, method)
     if NO_CN == 0:

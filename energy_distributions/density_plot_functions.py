@@ -19,44 +19,34 @@ def probability_density_plot(x,y,return_hists=False,figure=None,colorbar=True,N=
               fig,ax = figure
         else:
             fig,ax = plt.subplots(dpi=400,figsize=(8,6))
-        #hist, xedges, yedges = np.histogram2d(x, y,bins=25,density=True)
-        #areas = np.matmul(np.array([np.diff(xedges)]).T, np.array([np.diff(yedges)]))
-        #hist=hist.T
-        #prob_density = hist*areas
-        # hist_x,xedges = np.histogram(x,bins=200,density=True)
-        # hist_y,yedges = np.histogram(y,bins=200,density=True)
-
+        
+        # Bin data
         hist_x,xedges = np.histogram(x,bins=100)
         hist_y,yedges = np.histogram(y,bins=100)
         
+        # Convert to probabilities
         prob_x = hist_x/N /np.diff(xedges)
         prob_y = hist_y/N /np.diff(yedges)
 
-        areas = np.matmul(np.array([np.diff(xedges)]).T, np.array([np.diff(yedges)]))
-        
-        prob_density = np.outer(prob_x,prob_y)#/areas
+        # Make into a 2D probability distribution
+        prob_density = np.outer(prob_x,prob_y)
 
+        # Pad probability density function with empty bins to get smoother plotting
         prob_density_pad = np.pad(prob_density,pad_width=((2,2),(2,2)),mode='constant',constant_values=0)
 
+        # Get bin widths
         x_bin_length = abs(xedges[1]-xedges[0])
         y_bin_length = abs(yedges[1]-yedges[0])
 
-        # print(prob_density)
+        # Plot distribution
         im=ax.imshow(prob_density_pad.T,norm=LogNorm(vmin=1e-4,vmax=vmax),cmap=cmap,interpolation='gaussian',origin='lower',extent=[xedges[0]-2*x_bin_length, xedges[-1]+2*x_bin_length,yedges[0]-2*y_bin_length,yedges[-1]+2*y_bin_length],aspect="auto")
         
-
+        # Prepare ax for colorbar
         the_divider = make_axes_locatable(ax)
         color_axis = the_divider.append_axes("right", size="5%", pad='2%')
 
-
-        if colorbar:
-            # if np.max(prob_density)>10:
-            #     cbar=plt.colorbar(im,ticks=[1e-4,0.001,0.01,0.1,1,10])
-            #     cbar.ax.set_yticklabels(["0","$10^{-3}$","$10^{-2}$","$10^{-1}$","1","10"])
-            # else:    
-            #     cbar=plt.colorbar(im,ticks=[1e-4,0.001,0.01,0.1,1])
-            #     cbar.ax.set_yticklabels(["0","$10^{-3}$","$10^{-2}$","$10^{-1}$","1"]) 
-            
+        # Add colorbar
+        if colorbar: 
             cbar=plt.colorbar(im,ticks=[1e-4,0.001,0.01,0.1,1,10],cax=color_axis)
             cbar.ax.set_yticklabels(["0","$10^{-3}$","$10^{-2}$","$10^{-1}$","1","10"])
             cbar.ax.set_ylabel("Probability Density")

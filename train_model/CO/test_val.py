@@ -19,9 +19,8 @@ data = np.loadtxt(filename, delimiter=',', skiprows=1)
 features = data[:, :-4]
 energies = data[:, -4]
 
-
+# Leave one out cross validation
 loo = LeaveOneOut()
-
 preds = []
 colors = []
 for (train_index,test_index) in loo.split(features):
@@ -46,7 +45,6 @@ for (train_index,test_index) in loo.split(features):
 
 		
     # Predict adsorption energy for feature
-    # AE.append(np.abs(reg.predict(tuple(test_feature[:5]),test_feature[5:]) - test_energy))
     test_ensemble = tuple(test_feature[:5])
     preds.append(reg.predict(test_ensemble,test_feature[5:]))
 
@@ -60,7 +58,6 @@ preds = np.array(preds)
 fig,ax=plt.subplots(figsize=(5,5))
 
 ax.scatter(energies,preds,c=colors,marker='.')
-
 
 handles = []
 for metal in metals:
@@ -122,8 +119,6 @@ ax_inset.set_yticks([])
 ax_inset.set_xlabel('Residuals [eV]',fontsize=8)
 ax_inset.tick_params(labelsize=8)
 
-# plt.tight_layout()
+
 plt.subplots_adjust(bottom=0.2,left=0.2)
 plt.savefig("CO/CO_parity_plot.png",dpi=600,bbox_inches='tight')
-
-print(np.mean(np.abs(error/energies)))

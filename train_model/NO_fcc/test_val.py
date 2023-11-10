@@ -34,9 +34,8 @@ reg = LinearRegressor(n_ensembles, n_atoms_zones, n_metals)
 
 reg.fit(features,energies)
 
-
+# Leave one out cross validation
 loo = LeaveOneOut()
-
 preds = []
 colors = []
 for (train_index,test_index) in loo.split(features):
@@ -50,15 +49,9 @@ for (train_index,test_index) in loo.split(features):
     # Train regressor
     reg.fit(train_features, train_energies)
 
-
-
-		
     # Predict adsorption energy for feature
-    # AE.append(np.abs(reg.predict(tuple(test_feature[:5]),test_feature[5:]) - test_energy))
-    
     preds.append(reg.predict(test_feature))
 
-    # colors.append(metal_colors[metals[test_ensemble.index(1)]])
 
 preds = np.array(preds)
 
@@ -132,9 +125,5 @@ ax_inset.set_xlabel('Residuals [eV]',fontsize=8)
 ax_inset.tick_params(labelsize=8)
 ax_inset.xaxis.set_minor_locator(MultipleLocator(0.1))
 
-# plt.tight_layout()
 plt.subplots_adjust(bottom=0.2,left=0.2)
 plt.savefig("NO_fcc/NO_fcc_parity_plot.png",dpi=600,bbox_inches='tight')
-# plt.show()
-
-print(np.mean(np.abs(error/energies)))

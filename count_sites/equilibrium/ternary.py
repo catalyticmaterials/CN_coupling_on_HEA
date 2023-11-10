@@ -1,12 +1,8 @@
 import numpy as np
 from tqdm import tqdm
-from itertools import combinations
-import matplotlib.pyplot as plt
-import os
 import sys
 sys.path.append("..")
-from scripts.compositionspace_functions import get_molar_fractions, molar_fractions_to_cartesians
-import scripts.plotting_ternary_functions as pt
+from scripts.compositionspace_functions import get_molar_fractions
 from scripts.methods import count_sites
 
 

@@ -5,7 +5,6 @@ import itertools as it
 from time import time
 
 # Define Boltzmann's constant
-#kB = 1.380649e-4 / 1.602176634  # eV K-1 (exact)
 kB=8.617333262 * 1e-5 #eV/K
 kBT = kB*300 # eV
 
@@ -24,31 +23,28 @@ def block_indices(i,j,ads_site,n=100):
     return block_vectors
 
 def adsorb_H(i,j,H_coverage_mask,CO_coverage_mask,NO_coverage_mask,n=100):
+    # Adsorb
     H_coverage_mask[i,j] = True
-    
+    # Block sites
     i_b,j_b = block_indices(i,j,"fcc",n).T
     CO_coverage_mask[i_b,j_b] = False
     NO_coverage_mask[i,j] = False
     return H_coverage_mask,CO_coverage_mask,NO_coverage_mask
 
 def adsorb_CO(i,j,CO_coverage_mask,NO_coverage_mask,n=100):
+    # Adsorb
     CO_coverage_mask[i,j] = True
-    #CO_energies = np.append(CO_energies,energy)
-    
     #Block sites
     i_b,j_b = block_indices(i,j,"top",n).T
     NO_coverage_mask[i_b,j_b] = False
-        #H_coverage_mask[i_b,j_b] = False
     return CO_coverage_mask,NO_coverage_mask
 
 def adsorb_NO(i,j,CO_coverage_mask,NO_coverage_mask,n=100):
+    # Adsorb
     NO_coverage_mask[i,j] = True
-    #NO_energies = np.append(NO_energies,energy)
-    
     #Block sites
     i_b,j_b = block_indices(i,j,"fcc",n).T
     CO_coverage_mask[i_b,j_b] = False
-    #H_coverage_mask[i,j] = False
     return CO_coverage_mask,NO_coverage_mask
 
 def initiate_surface(f,metals,size=(100,100),n_layers=3):
@@ -391,102 +387,3 @@ def fill_surface(composition,P_CO,P_NO, metals, method, eU=0, n=100):
 
     # Return coverage masks and energy grids
     return (CO_coverage_bool, NO_coverage_bool, H_coverage_bool), (CO_energy_grid, NO_energy_grid, H_energy_grid)
-
-# def fill_surface(CO_energies,CO_site_ids,NO_energies,NO_site_ids):
-    
-#     #Append index to data
-#     CO_id = np.ones((len(CO_energies),1))
-#     NO_id = np.ones((len(NO_energies),1))*2
-#     CO = np.hstack((CO_energies.reshape(-1,1),CO_site_ids,CO_id))
-#     NO = np.hstack((NO_energies.reshape(-1,1),CO_site_ids,NO_id))
-
-#     #Combine data
-#     data_array=np.vstack((CO,NO))
-    
-#     #Sort data by lowest energy
-#     data_array = data_array[data_array[:, 0].argsort()]
-    
-#     #Prepare grids
-#     fcc_grid = np.zeros((100,100))
-#     top_grid = fcc_grid.copy()
-    
-    
-#     block_fcc_vectors = np.array([[-1,0],[0,-1],[0,0]])
-#     block_top_vectors = np.array([[-1,0],[-1,1],[1,0]])
-
-    
-#     for (energy,i,j,idx) in data_array:
-#         if energy>0: break
-#         i,j,idx = int(i),int(j),int(idx)
-#         ij_vec = np.array([i,j])
-    
-            
-#         if idx==1:
-#             if top_grid[i,j]==0:
-#                 top_grid[i,j] = energy
-#                 #CO_energies = np.append(CO_energies,energy)
-                
-#                 #Block sites
-#                 ij_block_vectors = ij_vec + block_fcc_vectors
-#                 for (i_b,j_b) in ij_block_vectors:
-#                     fcc_grid[i_b,j_b] = 1
-#             else:
-#                 continue
-        
-#         elif idx==2:
-#             if fcc_grid[i,j]==0:
-#                 fcc_grid[i,j] = energy
-#                 #NO_energies = np.append(NO_energies,energy)
-                
-#                 #Block sites
-#                 ij_block_vectors = ij_vec + block_top_vectors
-#                 for (i_b,j_b) in ij_block_vectors:
-#                     if i_b == 100:
-#                         i_b=0
-#                     elif j_b == 100:
-#                         j_b=0
-#                     top_grid[i_b,j_b] = 1
-    
-#     return top_grid,fcc_grid
-
-
-
-# def characterize_sites(fcc_grid,top_grid):
-#     CO_ids = np.array(np.nonzero(top_grid<0)).T
-#     CO_NO_energy_pair = np.empty((0,2))
-    
-    
-#     #pad grids
-#     fcc_grid = np.pad(fcc_grid,pad_width=1,mode="wrap")
-#     top_grid = np.pad(top_grid,pad_width=1,mode="wrap")
-#     CO_ids+=1
-    
-#     NO_ads_mask = fcc_grid < 0
-    
-#     #Get CO-NO pairs of catalytic neighboring sites
-#     for (i,j) in CO_ids:
-#         if fcc_grid[i-1,j-1] < 0:
-#             E_CO = E_CO = top_grid[i,j]#CO_energies[i*100+j]
-#             E_NO = fcc_grid[i-1,j-1] #NO_energies[(i-1)*100+(j-1)]
-#             NO_ads_mask[i-1,j-1] = False
-#             CO_NO_energy_pair = np.vstack((CO_NO_energy_pair,np.array([[E_CO,E_NO]])))
-#         if fcc_grid[i-1,j+1] < 0:
-#             E_CO = E_CO = top_grid[i,j]#CO_energies[i*100+j]
-#             E_NO = fcc_grid[i-1,j+1] #NO_energies[(i-1)*100+(j+1)]
-#             NO_ads_mask[i-1,j+1] = False
-#             CO_NO_energy_pair = np.vstack((CO_NO_energy_pair,np.array([[E_CO,E_NO]])))
-#         if fcc_grid[i+1,j-1] < 0:
-#             E_CO = top_grid[i,j] #CO_energies[i*100+j]
-#             E_NO = fcc_grid[i+1,j-1] #NO_energies[(i+1)*100+(j-1)]
-#             NO_ads_mask[i+1,j-1] = False
-#             CO_NO_energy_pair = np.vstack((CO_NO_energy_pair,np.array([[E_CO,E_NO]])))
-            
-            
-#         fcc_energies=fcc_grid[1:-1,1:-1].flatten()
-#         NO_ads_mask = NO_ads_mask[1:-1,1:-1].flatten()
-        
-#         #Remaining fcc sites which are not paired with CO
-#         NH3_site_energies = fcc_energies[NO_ads_mask]
-        
-#         return CO_NO_energy_pair, NH3_site_energies
-    

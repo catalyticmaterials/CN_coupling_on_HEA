@@ -1,7 +1,6 @@
 import numpy as np
 from ase.db import connect
 from collections import Counter
-from ase.data import covalent_radii
 
 import sys
 sys.path.append('..')
@@ -13,7 +12,6 @@ metals = ['Ag','Au', 'Cu', 'Pd','Pt']
 #Database path
 path = '../databases'
 
-
 # Set filename
 filename = 'CO.csv'
 
@@ -24,20 +22,25 @@ with open(filename, 'w') as file_:
 
 #Free energy reference to Cu
 DG_Cu = 0.12
-# Get Cu(111) reference energy
+
+# Write single metal features
 with connect(f'{path}/single_element_slabs_out.db') as db_slab,\
 	 connect(f'{path}/single_element_CO_out.db') as db_ads,\
 	open(filename, 'a') as file_:
-	 
+	
+	# Get Cu(111) reference energy
 	E_ref = db_ads.get(metal='Cu').energy - db_slab.get(metal='Cu').energy + DG_Cu
 
+	# Iterate through rows in db
 	for row_ads in db_ads.select():
-
+		# Get metal index
 		metal_index = metals.index(row_ads.metal)
 
+		# make site feature by one-hot encoding metal index
 		site_feature = np.zeros(5,dtype=int)
 		site_feature[metal_index] = 1
 
+		# Make feature
 		features = np.concatenate((site_feature,site_feature*6, site_feature*3, site_feature*3))
 		features_str = ','.join(map(str, features))
 
@@ -79,34 +82,6 @@ with connect(f'{path}/slabs_out.db') as db_slab,\
 		
 		# Get squared distances to the 1st layer atoms from the carbon atom
 		dists_sq = np.sum((atoms_3x3.positions[ids_1st] - pos_C)**2, axis=1)
-		
-		# ## Check if C not on ontop site
-        # # Get the three shortest distances
-		# dist_3 = np.sort(np.sqrt(dists_sq))[:3]  
-        
-        # # Get one atom from 4th and 5th layer 
-		# id_4th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 4])[0]
-		# id_5th = np.array([atom.index for atom in atoms_3x3 if atom.tag == 5])[7]
-        
-        # # Get distance in z
-		# z_dist = atoms_3x3.positions[id_4th][2] - atoms_3x3.positions[id_5th][2]
-        
-        # # Set average radius of atoms
-		# r = z_dist/2
-        # # Get radius of N
-		# r_C = covalent_radii[6]
-        
-        # #Set reference distance
-		# r_ref = r + r_C
-        
-        # #Get number of distances below reference +20%
-		# n = np.sum(dist_3 < r_ref*1.2)
-
-		# if n>1:
-		# 	print("Skips row",row_ads.id,". Not ontop site")
-		# 	#Continue with next structure if the site is not on-top.
-		# 	continue
-
 
 		# Get posittion of atoms in 1st layer
 		pos_1st=atoms_3x3.positions[ids_1st]

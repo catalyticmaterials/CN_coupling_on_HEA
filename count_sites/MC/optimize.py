@@ -6,7 +6,6 @@ import sys
 sys.path.append("..")
 from scripts.compositionspace_functions import molar_fractions_to_cartesians
 from scripts.bayesian_sampling import BayesianSampler
-#from shared_params.gaussian_process_regressor import GPR
 from scripts.methods import count_sites
 
 metals = ['Ag','Au', 'Cu', 'Pd','Pt']

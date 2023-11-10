@@ -1,5 +1,4 @@
 from .colors import metal_colors
-#from .lattice_parameters import lattice_parameters
 from scipy import special
 import numpy as np
 import itertools as it

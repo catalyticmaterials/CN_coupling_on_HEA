@@ -1,10 +1,6 @@
-import numpy as np
 from ase.db import connect
-import sys
-sys.path.append('..')
-from scripts import metals
 
-
+# Free energy corrections
 G_corr = {
     'NO': 0.56,
     'CO': 0.40,
