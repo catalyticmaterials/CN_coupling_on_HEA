@@ -1,1 +1,3 @@
-# CN_formation_on_HEA
+# Catalysis of C-N Coupling on High-Entropy Alloys
+
+Scripts and data for reproduction.
