@@ -39,7 +39,7 @@ def probability_density_plot(x,y,return_hists=False,figure=None,colorbar=True,N=
         y_bin_length = abs(yedges[1]-yedges[0])
 
         # Plot distribution
-        im=ax.imshow(prob_density_pad.T,norm=LogNorm(vmin=1e-4,vmax=vmax),cmap=cmap,interpolation='gaussian',origin='lower',extent=[xedges[0]-2*x_bin_length, xedges[-1]+2*x_bin_length,yedges[0]-2*y_bin_length,yedges[-1]+2*y_bin_length],aspect="auto")
+        im=ax.imshow(prob_density_pad.T,norm=LogNorm(vmin=1e-4,vmax=vmax),cmap=cmap,interpolation='gaussian',origin='lower',extent=[xedges[0]-2*x_bin_length, xedges[-1]+2*x_bin_length,yedges[0]-2*y_bin_length,yedges[-1]+2*y_bin_length],aspect="auto",rasterized=True)
         
         # Prepare ax for colorbar
         the_divider = make_axes_locatable(ax)

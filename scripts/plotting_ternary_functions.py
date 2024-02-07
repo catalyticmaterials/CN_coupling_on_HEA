@@ -143,9 +143,9 @@ def prepare_triangle_plot(ax, elems):
 	ax.set_ylim(-0.05, h+0.05)
 
 	# Plot triangle edges
-	ax.plot([0., 0.5], [0., h], '-', color='black', zorder=0)
-	ax.plot([0.5, 1.], [h, 0.], '-', color='black', zorder=0)
-	ax.plot([0., 1.], [0., 0.], '-', color='black', zorder=0)
+	ax.plot([0., 0.5], [0., h], '-', color='black', zorder=1,lw=1)
+	ax.plot([0.5, 1.], [h, 0.], '-', color='black', zorder=1,lw=1)
+	ax.plot([0., 1.], [0., 0.], '-', color='black', zorder=1,lw=1)
 	
 	# Remove spines
 	for direction in ['right', 'left', 'top', 'bottom']:
@@ -170,7 +170,7 @@ def prepare_triangle_plot(ax, elems):
 	
 	return ax
 
-def make_plot(grid,target_func,elements,scatter=False,contour_levels=15,vmax=None,colorbar=False,colormap='viridis',minval=0.2,maxval=1.0):
+def make_plot(grid,target_func,elements,return_contour=False,contour_levels=15,vmax=None,colorbar=False,colormap='viridis',minval=0.2,maxval=1.0):
     # Define color map of plot
     cmap = truncate_colormap(plt.get_cmap(colormap), minval=minval, maxval=maxval, n=100)
     
@@ -183,14 +183,13 @@ def make_plot(grid,target_func,elements,scatter=False,contour_levels=15,vmax=Non
     
     # Plot surrogate/uncertainty/acquisition function as a contour plot
     plot_kwargs = dict(cmap=cmap, levels=contour_levels, zorder=0,vmin=0,vmax=vmax)
-    #plot_kwargs = dict(cmap=cmap, levels=100, zorder=0,vmin=0)#,vmax=0.212578)
-    
-    if scatter:   
-        #ax.scatter(*grid, marker='o', c=target_func, cmap=cmap, s=2,vmin=0,vmax=0.212578)
-        ax.scatter(*grid, marker='o', c=target_func, cmap=cmap, s=1,vmin=0.03,vmax=0.1)
-    else:
-        contour=ax.tricontourf(*grid, target_func, **plot_kwargs)
+
+    contour=ax.tricontourf(*grid, target_func, **plot_kwargs)
         
     if colorbar:
         plt.colorbar(contour,ax=ax,shrink=0.5,anchor=(0.0,0.85))
-    return fig, ax
+    
+    if return_contour:
+        return fig,ax, contour
+    else:
+        return fig, ax

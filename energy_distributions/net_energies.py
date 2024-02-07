@@ -96,7 +96,8 @@ for method in ['eq','dyn']:
         mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="black",alpha=0.3,linestyle='--')
 
     plt.tight_layout()
-    plt.savefig(f'adsorption_dist_{method}.png',dpi=600)
+    # plt.savefig(f'adsorption_dist_{method}.png',dpi=600)
+    plt.savefig(f'adsorption_dist_{method}.svg',format='svg')
 
     #Correct to adsorption energies
     NO_energies-=G_corr['NO']
@@ -163,4 +164,5 @@ for method in ['eq','dyn']:
     fig.subplots_adjust(bottom=0.2,left=0.2,right=0.8,top=0.8)
 
 
-    plt.savefig(f'Energy_dist_{method}.png',dpi=600,bbox_inches='tight')
+    # plt.savefig(f'Energy_dist_{method}.png',dpi=600,bbox_inches='tight')
+    plt.savefig(f'Energy_dist_{method}.pdf',dpi=1000,bbox_inches='tight')

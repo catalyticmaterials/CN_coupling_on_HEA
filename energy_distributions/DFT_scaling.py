@@ -194,4 +194,5 @@ fig.legend(handles=handles, labels=metals,
 
 # Make room for legend on top
 fig.subplots_adjust(top=0.89)
-plt.savefig('DFT_scaling.png', dpi=600)
+# plt.savefig('DFT_scaling.png', dpi=600)
+plt.savefig('DFT_scaling.svg',format='svg')

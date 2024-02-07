@@ -42,7 +42,8 @@ with connect(f'{db_path}/single_element_slabs_out.db') as db_slab,\
 
 
 # Compositions to evaluate
-compositions = [np.array([0.2,0.2,0.2,0.2,0.2]),np.array([0.1,0.1,0.6,0.1,0.1]),np.array([0.0,0.5,0.5,0.0,0.0])]
+compositions = [np.array([0.2,0.2,0.2,0.2,0.2]),np.array([0.1,0.1,0.6,0.1,0.1]),np.array([0.0,0.5,0.5,0.0,0.0]),
+                np.array([0.5,0.0,0.5,0.0,0.0]),np.array([0.25,0.25,0.5,0.0,0.0]),np.array([0.25,0.25,0.25,0.25,0.0])]
 
 # Iterate through compositions
 for composition in compositions:
@@ -142,7 +143,6 @@ for composition in compositions:
     # Get total probability below dG=0
     probability = np.sum(NO_energies<=(-G_corr['NO']))/10000 * np.sum(CO_energies<=(-G_corr['CO']))/10000
 
-    print(probability)
 
     # Plot alloy in text box
     alloy_sub_list = [metals[i] + '$_{' + str(int(composition[i]*100)) + '}$' for i in range(len(metals)) if composition[i]>0]
@@ -153,8 +153,11 @@ for composition in compositions:
     # Plot probability in text
     ax.text(xlim[0]+0.02,-0.58,f'$P_{{area}}$ = {probability:.4f}',ha='left',va='top',color='tab:blue')
     ax.fill_between([xlim[0],-G_corr['CO']],ylim[0],-G_corr['NO'],alpha=0.3,hatch='///',color='none',linewidth=0,edgecolor='tab:blue')
-    
+
 
     fig.subplots_adjust(bottom=0.2,left=0.2,right=0.8,top=0.8)
    
-    plt.savefig(f'{alloy}_CO_NO_energy_distribution.png',dpi=600,bbox_inches='tight')
+    # plt.savefig(f'{alloy}_CO_NO_energy_distribution.png',dpi=600,bbox_inches='tight')
+    plt.savefig(f'{alloy}_CO_NO_energy_distribution.pdf',bbox_inches='tight',dpi=1000)
+
+    
